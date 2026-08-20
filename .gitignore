@@ -1,0 +1,23 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+coverage/
+
+# Environment files and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Test and tool output
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Logs and local OS/editor files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store

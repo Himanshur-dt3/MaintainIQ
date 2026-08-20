@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TECHNICIAN
+  REPORTER
+}
+
+enum TicketStatus {
+  REPORTED
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IssueType {
+  ELECTRICAL
+  PLUMBING
+  HVAC
+  INTERNET_IT
+  APPLIANCE
+  STRUCTURAL_GENERAL
+}
+
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  RETIRED
+}
+
+model User {
+  id               String          @id @default(uuid())
+  name             String
+  email            String          @unique
+  passwordHash     String
+  role             Role
+  jobTitle         String?
+  reportedTickets  Ticket[]        @relation("ReportedTickets")
+  assignedTickets  Ticket[]        @relation("AssignedTickets")
+  historyEntries   TicketHistory[] @relation("HistoryActor")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([role])
+}
+
+model Asset {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  type      String
+  location  String
+  status    AssetStatus @default(ACTIVE)
+  tickets   Ticket[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([location])
+}
+
+model Ticket {
+  id              String          @id @default(uuid())
+  title           String
+  description     String
+  location        String
+  issueType       IssueType
+  priority        Priority        @default(MEDIUM)
+  status          TicketStatus    @default(REPORTED)
+  assetId         String
+  reporterId      String
+  technicianId    String?
+  resolutionNotes String?
+  asset           Asset           @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  reporter        User            @relation("ReportedTickets", fields: [reporterId], references: [id], onDelete: Restrict)
+  technician      User?           @relation("AssignedTickets", fields: [technicianId], references: [id], onDelete: SetNull)
+  aiAnalysis      AIAnalysis?
+  history         TicketHistory[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([issueType])
+  @@index([reporterId])
+  @@index([technicianId])
+  @@index([assetId])
+  @@index([createdAt])
+}
+
+model AIAnalysis {
+  id                      String    @id @default(uuid())
+  ticketId                String    @unique
+  issueType               IssueType
+  priority                Priority
+  possibleCauses          String[]
+  recommendedTechnician   String
+  suggestedAction         String
+  confidence              Float
+  ticket                  Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model TicketHistory {
+  id            String   @id @default(uuid())
+  ticketId      String
+  actorId       String?
+  action        String
+  previousValue String?
+  newValue      String?
+  note          String?
+  ticket        Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actor         User?    @relation("HistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([actorId])
+}
