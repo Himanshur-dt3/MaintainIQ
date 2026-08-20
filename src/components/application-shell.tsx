@@ -17,14 +17,17 @@ interface ApplicationShellProps {
 
 const roleNavigation: Record<
   Role,
-  Array<{
-    href: string;
-    label: string;
-  }>
+  Array<{ href: string; label: string; icon: string }>
 > = {
-  ADMIN: [{ href: "/admin", label: "Operations overview" }],
-  TECHNICIAN: [{ href: "/technician", label: "My assigned work" }],
-  REPORTER: [{ href: "/reporter", label: "Report an issue" }],
+  ADMIN: [
+    { href: "/admin", label: "Operations Overview", icon: "⬡" },
+  ],
+  TECHNICIAN: [
+    { href: "/technician", label: "My Workload", icon: "⬡" },
+  ],
+  REPORTER: [
+    { href: "/reporter", label: "Report Issue", icon: "⬡" },
+  ],
 };
 
 const roleLabels: Record<Role, string> = {
@@ -34,7 +37,7 @@ const roleLabels: Record<Role, string> = {
 };
 
 /**
- * Renders the responsive authenticated workspace chrome and role-specific navigation.
+ * Renders the authenticated workspace chrome with a fixed sidebar and top bar.
  *
  * @param user - Server-authenticated user identity and persisted role.
  * @param children - Protected workspace content.
@@ -43,72 +46,109 @@ const roleLabels: Record<Role, string> = {
 export function ApplicationShell({ user, children }: ApplicationShellProps) {
   const pathname = usePathname();
   const navigation = roleNavigation[user.role];
+  const initials = user.name
+    .split(" ")
+    .slice(0, 2)
+    .map((n) => n.charAt(0))
+    .join("");
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href={navigation[0].href}
-            className="group flex items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-700 text-lg font-bold text-white shadow-sm">
-              M
-            </span>
-            <span>
-              <span className="block text-lg font-bold tracking-tight text-slate-950">
-                MaintainIQ
-              </span>
-              <span className="block text-xs font-medium text-slate-500">
-                Maintenance operations
-              </span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-slate-900">{user.name}</p>
-              <p className="text-xs text-slate-500">{roleLabels[user.role]}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2"
-            >
-              Sign out
-            </button>
-          </div>
+    <div className="flex h-screen overflow-hidden bg-[#0b0f1a] font-sans text-slate-100 antialiased">
+      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
+      <aside className="flex w-56 shrink-0 flex-col border-r border-slate-800 bg-[#0d1120]">
+        {/* Logo */}
+        <div className="flex h-14 items-center gap-3 border-b border-slate-800 px-5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-display text-sm font-black text-white">
+            M
+          </span>
+          <span className="font-display text-base font-black tracking-tight text-white">
+            Maintain<span className="text-indigo-400">IQ</span>
+          </span>
         </div>
 
-        <nav
-          aria-label="Primary navigation"
-          className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
-        >
-          <ul className="flex gap-1 overflow-x-auto">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`block whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 ${
-                      isActive
-                        ? "border-sky-700 text-sky-800"
-                        : "border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+        {/* Nav links */}
+        <nav aria-label="Primary navigation" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+          <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+            Navigation
+          </p>
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isActive
+                    ? "bg-indigo-600/20 text-indigo-300 ring-1 ring-indigo-500/30"
+                    : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-100"
+                }`}
+              >
+                <span className="text-[10px] opacity-50">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
-      </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        {/* User card at bottom */}
+        <div className="border-t border-slate-800 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 font-display text-sm font-bold text-indigo-300 ring-1 ring-indigo-500/30">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-slate-200">{user.name}</p>
+              <p className="truncate text-[10px] text-slate-500">{roleLabels[user.role]}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-800/60 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-800 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main area ───────────────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top bar */}
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-[#0d1120]/80 px-6 backdrop-blur-xl">
+          {/* Search */}
+          <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-500 w-56">
+            <span>🔍</span>
+            <span>Search tickets…</span>
+          </div>
+
+          {/* Right section */}
+          <div className="flex items-center gap-4">
+            {/* Notification bell placeholder */}
+            <button
+              type="button"
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 transition"
+              aria-label="Notifications"
+            >
+              🔔
+              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 rounded-full bg-indigo-500" />
+            </button>
+
+            {/* Avatar */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600/20 font-display text-sm font-bold text-indigo-300 ring-1 ring-indigo-500/30">
+                {initials}
+              </div>
+              <span className="hidden text-xs font-semibold text-slate-300 sm:block">{user.name}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

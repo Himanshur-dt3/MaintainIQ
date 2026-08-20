@@ -114,15 +114,7 @@ export const reviewTicketSchema = z
     priority: prioritySchema.optional(),
     reviewNote: trimmedText("Review note", 3, 2000),
   })
-  .strict()
-  .superRefine((input, context) => {
-    if (!input.issueType && !input.priority) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Select an issue type or priority to override.",
-      });
-    }
-  });
+  .strict();
 
 export const startWorkSchema = z.object({}).strict();
 

@@ -1,18 +1,20 @@
 "use client";
 
-import type { Priority, TicketStatus } from "@prisma/client";
+import type { IssueType, Priority, TicketStatus } from "@prisma/client";
 import { useState } from "react";
 
 import {
   TicketPriorityBadge,
   TicketStatusBadge,
 } from "@/src/components/ticket-badges";
+import { generateTechnicianDiagnosticGuide } from "@/src/server/services/ai-assistant";
 
 type TechnicianTicket = {
   id: string;
   title: string;
   description: string;
   location: string;
+  issueType?: IssueType;
   priority: Priority;
   status: TicketStatus;
   resolutionNotes: string | null;
@@ -150,59 +152,58 @@ export function TechnicianTicketWorkspace({
     return (
       <section
         aria-labelledby="technician-workload-title"
-        className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center shadow-sm"
+        className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-16 text-center"
       >
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-700">
-          Assigned workload
-        </p>
+        <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
+          Assigned Workload
+        </span>
         <h2
           id="technician-workload-title"
-          className="mt-2 text-xl font-bold text-slate-950"
+          className="mt-2 font-display text-2xl font-bold text-white"
         >
-          No tickets are assigned to you
+          No Tickets Assigned To You
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-          Tickets assigned by an administrator will appear here. Your workload
-          is always scoped by the server to your own assignments.
+        <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
+          Newly assigned tickets from administrators will appear here automatically.
         </p>
       </section>
     );
   }
 
   return (
-    <section aria-labelledby="technician-workload-title">
+    <section aria-labelledby="technician-workload-title" className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-700">
-            Assigned workload
-          </p>
+          <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
+            Active Workload
+          </span>
           <h2
             id="technician-workload-title"
-            className="mt-2 text-2xl font-bold text-slate-950"
+            className="mt-1 font-display text-2xl font-bold text-white"
           >
-            Your maintenance queue
+            Your Maintenance Queue
           </h2>
         </div>
-        <p className="text-sm text-slate-600">
+        <span className="rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-1.5 text-xs font-bold text-slate-400">
           {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"} assigned
-        </p>
+        </span>
       </div>
 
       {actionState ? (
-        <p
+        <div
           role={actionState.kind === "error" ? "alert" : "status"}
-          className={`mt-4 rounded-lg px-4 py-3 text-sm ${
+          className={`rounded-2xl border p-4 text-xs font-bold ${
             actionState.kind === "error"
-              ? "bg-red-50 text-red-800"
-              : "bg-emerald-50 text-emerald-800"
+              ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
           }`}
         >
           {actionState.message}
-        </p>
+        </div>
       ) : null}
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="space-y-3">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="space-y-4">
           {tickets.map((ticket) => {
             const isSelected = ticket.id === selectedTicket?.id;
             const isStarting = busyAction === `${ticket.id}:start`;
@@ -210,10 +211,10 @@ export function TechnicianTicketWorkspace({
             return (
               <article
                 key={ticket.id}
-                className={`rounded-xl border bg-white p-5 shadow-sm transition ${
+                className={`rounded-3xl border bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl transition duration-300 ${
                   isSelected
-                    ? "border-sky-400 ring-1 ring-sky-200"
-                    : "border-slate-200"
+                    ? "border-sky-500/60 ring-1 ring-sky-500/30"
+                    : "border-slate-800 hover:border-slate-700"
                 }`}
               >
                 <button
@@ -224,15 +225,15 @@ export function TechnicianTicketWorkspace({
                     setResolutionNotes("");
                     setActionState(null);
                   }}
-                  className="w-full text-left focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2"
+                  className="w-full text-left focus:outline-none"
                   aria-pressed={isSelected}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         Ticket #{ticket.id.slice(0, 8)}
-                      </p>
-                      <h3 className="mt-1 text-lg font-semibold text-slate-950">
+                      </span>
+                      <h3 className="mt-1 font-display text-base font-bold text-white">
                         {ticket.title}
                       </h3>
                     </div>
@@ -241,8 +242,8 @@ export function TechnicianTicketWorkspace({
                       <TicketStatusBadge status={ticket.status} />
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-slate-600">
-                    {ticket.asset.name} · {ticket.location}
+                  <p className="mt-3 text-xs text-slate-400">
+                    <span className="font-semibold text-slate-200">{ticket.asset.name}</span> · {ticket.location}
                   </p>
                 </button>
 
@@ -251,9 +252,9 @@ export function TechnicianTicketWorkspace({
                     type="button"
                     onClick={() => startWork(ticket.id)}
                     disabled={isStarting}
-                    className="mt-4 rounded-lg bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    className="mt-4 w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-sky-500/20 hover:brightness-110 disabled:opacity-50"
                   >
-                    {isStarting ? "Starting work…" : "Start work"}
+                    {isStarting ? "Starting Work…" : "Start Work"}
                   </button>
                 ) : null}
               </article>
@@ -262,13 +263,13 @@ export function TechnicianTicketWorkspace({
         </div>
 
         {selectedTicket ? (
-          <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Active ticket
-                </p>
-                <h3 className="mt-1 text-xl font-bold text-slate-950">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400">
+                  Active Ticket Workspace
+                </span>
+                <h3 className="mt-1 font-display text-xl font-bold text-white">
                   {selectedTicket.title}
                 </h3>
               </div>
@@ -278,129 +279,200 @@ export function TechnicianTicketWorkspace({
               </div>
             </div>
 
-            <dl className="mt-5 grid gap-4 border-y border-slate-100 py-5 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="font-medium text-slate-500">Asset</dt>
-                <dd className="mt-1 text-slate-900">
-                  {selectedTicket.asset.name}
-                </dd>
+            <dl className="mt-5 grid gap-3 text-xs sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <dt className="font-semibold text-slate-400">Asset</dt>
+                <dd className="mt-1 font-bold text-slate-100">{selectedTicket.asset.name}</dd>
               </div>
-              <div>
-                <dt className="font-medium text-slate-500">Location</dt>
-                <dd className="mt-1 text-slate-900">
-                  {selectedTicket.location}
-                </dd>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <dt className="font-semibold text-slate-400">Location</dt>
+                <dd className="mt-1 font-bold text-slate-100">{selectedTicket.location}</dd>
               </div>
-              <div>
-                <dt className="font-medium text-slate-500">Reporter</dt>
-                <dd className="mt-1 text-slate-900">
-                  {selectedTicket.reporter.name}
-                </dd>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <dt className="font-semibold text-slate-400">Reporter</dt>
+                <dd className="mt-1 font-bold text-slate-100">{selectedTicket.reporter.name}</dd>
               </div>
-              <div>
-                <dt className="font-medium text-slate-500">Reporter contact</dt>
-                <dd className="mt-1 break-all text-slate-900">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                <dt className="font-semibold text-slate-400">Contact Email</dt>
+                <dd className="mt-1 break-all font-mono font-semibold text-sky-400">
                   {selectedTicket.reporter.email}
                 </dd>
               </div>
             </dl>
 
-            <section className="mt-5" aria-labelledby="reported-issue-title">
+            <section className="mt-6" aria-labelledby="reported-issue-title">
               <h4
                 id="reported-issue-title"
-                className="text-sm font-semibold text-slate-900"
+                className="text-xs font-bold uppercase tracking-wider text-slate-300"
               >
-                Reported issue
+                Reported Symptom Description
               </h4>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+              <div className="mt-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-xs leading-relaxed text-slate-300">
                 {selectedTicket.description}
-              </p>
+              </div>
             </section>
 
+            {/* AI Diagnostic Assistant & Troubleshooting Guide */}
+            {(() => {
+              const guide = generateTechnicianDiagnosticGuide(
+                selectedTicket.issueType ?? "STRUCTURAL_GENERAL",
+                selectedTicket.title,
+                selectedTicket.location,
+              );
+
+              return (
+                <section
+                  aria-labelledby="ai-guide-title"
+                  className="mt-6 rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 via-slate-900/90 to-slate-900/90 p-5 shadow-xl backdrop-blur-md"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/20 text-xs text-indigo-400">
+                        ⚡
+                      </span>
+                      <h4 id="ai-guide-title" className="font-display text-sm font-bold text-white">
+                        AI Diagnostic & Troubleshooting Guide
+                      </h4>
+                    </div>
+                    <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-[10px] font-bold text-indigo-300">
+                      Est. ~{guide.estimatedTimeMinutes} min repair
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-4 text-xs">
+                    {/* Safety Warnings */}
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-300">
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-amber-400">
+                        ⚠️ Required Safety Protocol
+                      </p>
+                      <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-200">
+                        {guide.safetyWarnings.map((warning, i) => (
+                          <li key={i}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Required Tools & Parts Checklist */}
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-slate-400">
+                        Recommended Tools & Parts
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {guide.requiredTools.map((tool, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1 text-[11px] font-semibold text-slate-200"
+                          >
+                            <span className="text-sky-400">✓</span> {tool}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Step-by-Step Troubleshooting Procedure */}
+                    <div>
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-slate-400">
+                        Recommended Diagnostic Steps
+                      </p>
+                      <ol className="mt-2 space-y-2 text-slate-300">
+                        {guide.diagnosticSteps.map((step, i) => (
+                          <li key={i} className="flex items-start gap-2.5 rounded-lg bg-slate-950/40 p-2 border border-slate-800/60">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 font-mono text-[10px] font-bold text-indigo-400">
+                              {i + 1}
+                            </span>
+                            <span className="mt-0.5 leading-relaxed">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </div>
+                </section>
+              );
+            })()}
+
             {selectedTicket.status === "ASSIGNED" ? (
-              <div className="mt-6 rounded-lg bg-amber-50 p-4 text-sm text-amber-900">
-                Start work before recording notes or resolving this ticket.
+              <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-300">
+                Click "Start Work" above to begin recording notes or resolving this ticket.
               </div>
             ) : null}
 
             {selectedTicket.status === "IN_PROGRESS" ? (
-              <div className="mt-6 grid gap-6">
+              <div className="mt-6 space-y-6">
                 <form
                   onSubmit={submitWorkNote}
-                  className="rounded-xl border border-slate-200 p-5"
+                  className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5"
                   aria-labelledby="work-note-title"
                 >
                   <h4
                     id="work-note-title"
-                    className="text-base font-semibold text-slate-950"
+                    className="font-display text-sm font-bold text-white"
                   >
-                    Add work note
+                    Add Progress Note
                   </h4>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Notes are attributed to you and retained in the ticket history.
+                  <p className="mt-1 text-xs text-slate-400">
+                    Log diagnostics or parts used. Attributed to your account.
                   </p>
-                  <label className="mt-4 grid gap-1.5 text-sm font-medium text-slate-700">
+                  <label className="mt-4 block text-xs font-bold uppercase tracking-wider text-slate-300">
                     Work completed or findings
                     <textarea
                       required
                       minLength={1}
                       maxLength={2000}
-                      rows={4}
+                      rows={3}
                       value={workNote}
                       onChange={(event) => setWorkNote(event.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-slate-950"
-                      placeholder="Record diagnostics, parts used, or the next planned step."
+                      className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-600 focus:border-sky-500 outline-none"
+                      placeholder="Record diagnostics, parts used, or next steps."
                     />
                   </label>
                   <button
                     type="submit"
                     disabled={busyAction === `${selectedTicket.id}:note`}
-                    className="mt-4 rounded-lg border border-sky-700 px-4 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                    className="mt-4 rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-300 hover:bg-sky-500/20 disabled:opacity-50"
                   >
                     {busyAction === `${selectedTicket.id}:note`
-                      ? "Saving note…"
-                      : "Save work note"}
+                      ? "Saving Note…"
+                      : "Save Work Note"}
                   </button>
                 </form>
 
                 <form
                   onSubmit={submitResolution}
-                  className="rounded-xl border border-emerald-200 bg-emerald-50 p-5"
+                  className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"
                   aria-labelledby="resolve-ticket-title"
                 >
                   <h4
                     id="resolve-ticket-title"
-                    className="text-base font-semibold text-slate-950"
+                    className="font-display text-sm font-bold text-emerald-300"
                   >
-                    Resolve ticket
+                    Resolve Maintenance Ticket
                   </h4>
-                  <p className="mt-1 text-sm text-slate-700">
-                    A non-empty resolution note is required and becomes part of
-                    the durable audit record.
+                  <p className="mt-1 text-xs text-emerald-200/80">
+                    A non-empty resolution note is required for audit history.
                   </p>
-                  <label className="mt-4 grid gap-1.5 text-sm font-medium text-slate-700">
-                    Resolution note
+                  <label className="mt-4 block text-xs font-bold uppercase tracking-wider text-emerald-300">
+                    Resolution Note
                     <textarea
                       required
                       minLength={1}
                       maxLength={4000}
-                      rows={5}
+                      rows={4}
                       value={resolutionNotes}
                       onChange={(event) =>
                         setResolutionNotes(event.target.value)
                       }
-                      className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-slate-950"
-                      placeholder="Describe the completed repair, verification, and any follow-up."
+                      className="mt-2 block w-full rounded-xl border border-emerald-500/40 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder:text-emerald-700 focus:border-emerald-400 outline-none"
+                      placeholder="Describe the completed repair, verification, and follow-up."
                     />
                   </label>
                   <button
                     type="submit"
                     disabled={busyAction === `${selectedTicket.id}:resolve`}
-                    className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    className="mt-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/20 hover:brightness-110 disabled:opacity-50"
                   >
                     {busyAction === `${selectedTicket.id}:resolve`
-                      ? "Resolving ticket…"
-                      : "Save resolution"}
+                      ? "Resolving Ticket…"
+                      : "Save & Complete Resolution"}
                   </button>
                 </form>
               </div>
@@ -409,15 +481,15 @@ export function TechnicianTicketWorkspace({
             {selectedTicket.status === "RESOLVED" ? (
               <section
                 aria-labelledby="resolution-title"
-                className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5"
+                className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5"
               >
                 <h4
                   id="resolution-title"
-                  className="text-base font-semibold text-emerald-950"
+                  className="font-display text-sm font-bold text-emerald-300"
                 >
-                  Resolution recorded
+                  Resolution Recorded
                 </h4>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-emerald-900">
+                <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-emerald-200">
                   {selectedTicket.resolutionNotes}
                 </p>
               </section>

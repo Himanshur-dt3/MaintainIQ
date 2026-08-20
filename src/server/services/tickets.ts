@@ -451,13 +451,20 @@ export async function addTicketWorkNote(
     throw new WorkflowError("Work notes may only be added while work is in progress.");
   }
 
-  return prisma.ticketHistory.create({
-    data: {
-      ticketId,
-      actorId: actor.id,
-      action: "WORK_NOTE_ADDED",
-      note: input.note,
-    },
+  return prisma.$transaction(async (tx) => {
+    await tx.ticket.update({
+      where: { id: ticketId },
+      data: { updatedAt: new Date() },
+    });
+
+    return tx.ticketHistory.create({
+      data: {
+        ticketId,
+        actorId: actor.id,
+        action: "WORK_NOTE_ADDED",
+        note: input.note,
+      },
+    });
   });
 }
 
@@ -602,7 +609,12 @@ export async function listAdminTickets(
     where,
     include: {
       asset: {
-        select: { id: true, name: true, location: true },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          _count: { select: { tickets: true } },
+        },
       },
       reporter: {
         select: { id: true, name: true },
@@ -616,6 +628,14 @@ export async function listAdminTickets(
           priority: true,
           confidence: true,
           suggestedAction: true,
+        },
+      },
+      history: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          actor: {
+            select: { id: true, name: true, role: true },
+          },
         },
       },
     },
@@ -726,43 +746,52 @@ export async function reviewTicket(
   const priorityChanged =
     input.priority !== undefined && input.priority !== ticket.priority;
 
-  if (!issueTypeChanged && !priorityChanged) {
-    throw new WorkflowError(
-      "Choose an issue type or priority different from the current ticket value.",
-    );
-  }
-
   return prisma.$transaction(async (tx) => {
-    const updatedTicket = await tx.ticket.update({
-      where: { id: ticketId },
-      data: {
-        ...(issueTypeChanged ? { issueType: input.issueType } : {}),
-        ...(priorityChanged ? { priority: input.priority } : {}),
-      },
-    });
+    const updatedTicket =
+      issueTypeChanged || priorityChanged
+        ? await tx.ticket.update({
+            where: { id: ticketId },
+            data: {
+              ...(issueTypeChanged ? { issueType: input.issueType } : {}),
+              ...(priorityChanged ? { priority: input.priority } : {}),
+            },
+          })
+        : await tx.ticket.findUniqueOrThrow({ where: { id: ticketId } });
 
-    if (issueTypeChanged) {
+    if (!issueTypeChanged && !priorityChanged) {
       await createHistory(
         tx,
         ticketId,
         actor.id,
-        "AI_ISSUE_TYPE_OVERRIDDEN",
-        ticket.issueType,
-        input.issueType,
+        "AI_REVIEW_CONFIRMED",
+        `${ticket.issueType}/${ticket.priority}`,
+        `${ticket.issueType}/${ticket.priority}`,
         input.reviewNote,
       );
-    }
+    } else {
+      if (issueTypeChanged) {
+        await createHistory(
+          tx,
+          ticketId,
+          actor.id,
+          "AI_ISSUE_TYPE_OVERRIDDEN",
+          ticket.issueType,
+          input.issueType,
+          input.reviewNote,
+        );
+      }
 
-    if (priorityChanged) {
-      await createHistory(
-        tx,
-        ticketId,
-        actor.id,
-        "AI_PRIORITY_OVERRIDDEN",
-        ticket.priority,
-        input.priority,
-        input.reviewNote,
-      );
+      if (priorityChanged) {
+        await createHistory(
+          tx,
+          ticketId,
+          actor.id,
+          "AI_PRIORITY_OVERRIDDEN",
+          ticket.priority,
+          input.priority,
+          input.reviewNote,
+        );
+      }
     }
 
     return updatedTicket;

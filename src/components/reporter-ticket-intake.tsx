@@ -100,27 +100,25 @@ export function ReporterTicketIntake() {
   return (
     <section
       aria-labelledby="report-issue-title"
-      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+      className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl sm:p-8"
     >
       <div className="max-w-2xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-700">
-          New maintenance request
-        </p>
-        <h2 id="report-issue-title" className="mt-2 text-2xl font-bold text-slate-950">
-          Report an issue
+        <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
+          New Maintenance Request
+        </span>
+        <h2 id="report-issue-title" className="mt-1 font-display text-2xl font-bold text-white">
+          Report an Issue
         </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Tell us what happened and where. MaintainIQ securely sends these facts
-          for server-side triage to suggest the issue type, priority, asset, and
-          next action.
+        <p className="mt-2 text-xs leading-relaxed text-slate-400">
+          Provide issue details and location. MaintainIQ processes these facts server-side to determine priority, classify the issue, and link assets automatically.
         </p>
       </div>
 
-      <form className="mt-6 space-y-5" onSubmit={submitTicket} noValidate>
+      <form className="mt-6 space-y-6" onSubmit={submitTicket} noValidate>
         <div>
           <label
             htmlFor="ticket-title"
-            className="block text-sm font-semibold text-slate-800"
+            className="block text-xs font-bold uppercase tracking-wider text-slate-300"
           >
             What needs attention?
           </label>
@@ -135,11 +133,11 @@ export function ReporterTicketIntake() {
             disabled={isSubmitting}
             maxLength={160}
             required
-            className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-            placeholder="For example, water is leaking below the kitchen sink"
+            className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="For example, Water leaking near kitchen sink"
           />
           {fieldErrors.title ? (
-            <p id="ticket-title-error" className="mt-2 text-sm text-rose-700">
+            <p id="ticket-title-error" className="mt-2 text-xs font-semibold text-rose-400">
               {fieldErrors.title}
             </p>
           ) : null}
@@ -148,7 +146,7 @@ export function ReporterTicketIntake() {
         <div>
           <label
             htmlFor="ticket-location"
-            className="block text-sm font-semibold text-slate-800"
+            className="block text-xs font-bold uppercase tracking-wider text-slate-300"
           >
             Where is the issue?
           </label>
@@ -163,11 +161,11 @@ export function ReporterTicketIntake() {
             disabled={isSubmitting}
             maxLength={160}
             required
-            className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-            placeholder="For example, Building A · Kitchen 2"
+            className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="For example, Building A · 1st Floor Washroom"
           />
           {fieldErrors.location ? (
-            <p id="ticket-location-error" className="mt-2 text-sm text-rose-700">
+            <p id="ticket-location-error" className="mt-2 text-xs font-semibold text-rose-400">
               {fieldErrors.location}
             </p>
           ) : null}
@@ -176,7 +174,7 @@ export function ReporterTicketIntake() {
         <div>
           <label
             htmlFor="ticket-description"
-            className="block text-sm font-semibold text-slate-800"
+            className="block text-xs font-bold uppercase tracking-wider text-slate-300"
           >
             Describe what you observed
           </label>
@@ -193,12 +191,12 @@ export function ReporterTicketIntake() {
             maxLength={5000}
             minLength={10}
             required
-            rows={6}
-            className="mt-2 block w-full resize-y rounded-lg border border-slate-300 px-3 py-2.5 text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20 disabled:cursor-not-allowed disabled:bg-slate-100"
-            placeholder="Include symptoms, when it started, any safety concerns, and what you have already tried."
+            rows={5}
+            className="mt-2 block w-full resize-y rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="Include symptoms, safety concerns, when it started, or steps already taken."
           />
           {fieldErrors.description ? (
-            <p id="ticket-description-error" className="mt-2 text-sm text-rose-700">
+            <p id="ticket-description-error" className="mt-2 text-xs font-semibold text-rose-400">
               {fieldErrors.description}
             </p>
           ) : null}
@@ -207,7 +205,7 @@ export function ReporterTicketIntake() {
         {formError ? (
           <div
             role="alert"
-            className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+            className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-semibold text-rose-300"
           >
             {formError}
           </div>
@@ -216,25 +214,34 @@ export function ReporterTicketIntake() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 disabled:cursor-wait disabled:bg-sky-400"
+          className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-sky-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition duration-300 hover:shadow-sky-500/40 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting ? "Submitting for triage…" : "Submit issue"}
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Analyzing and submitting…
+            </span>
+          ) : (
+            "Submit Issue for Triage"
+          )}
         </button>
       </form>
 
       {result ? (
         <div
           aria-live="polite"
-          className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5"
+          className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 backdrop-blur-md"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-emerald-900">
-                Issue submitted successfully
+              <p className="font-display text-base font-bold text-emerald-300">
+                Issue Submitted Successfully!
               </p>
-              <p className="mt-1 text-sm text-emerald-800">
-                Ticket #{result.ticket.id.slice(0, 8)} is now visible in Your
-                tickets below.
+              <p className="mt-1 text-xs text-emerald-200">
+                Ticket #{result.ticket.id.slice(0, 8)} is now tracked in your workload below.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -243,24 +250,24 @@ export function ReporterTicketIntake() {
             </div>
           </div>
 
-          <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="font-medium text-emerald-900">Suggested issue type</dt>
-              <dd className="mt-1 text-emerald-950">
+          <dl className="mt-5 grid gap-4 text-xs sm:grid-cols-2">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/40 p-3">
+              <dt className="font-bold uppercase text-emerald-400">Suggested Issue Type</dt>
+              <dd className="mt-1 font-semibold text-emerald-100">
                 {result.analysis.issue_type.replaceAll("_", " ")}
               </dd>
             </div>
-            <div>
-              <dt className="font-medium text-emerald-900">Asset outcome</dt>
-              <dd className="mt-1 text-emerald-950">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/40 p-3">
+              <dt className="font-bold uppercase text-emerald-400">Asset Linked</dt>
+              <dd className="mt-1 font-semibold text-emerald-100">
                 {result.assetCreated
-                  ? "A relevant asset was added for this report."
-                  : "A relevant existing asset was linked."}
+                  ? "New relevant asset created for this location."
+                  : "Linked to existing location asset."}
               </dd>
             </div>
-            <div className="sm:col-span-2">
-              <dt className="font-medium text-emerald-900">Suggested next action</dt>
-              <dd className="mt-1 text-emerald-950">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/40 p-3 sm:col-span-2">
+              <dt className="font-bold uppercase text-emerald-400">Suggested Next Action</dt>
+              <dd className="mt-1 font-semibold text-emerald-100">
                 {result.analysis.suggested_action}
               </dd>
             </div>

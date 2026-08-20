@@ -38,10 +38,10 @@ export function TicketCard({ ticket, detailHref }: TicketCardProps) {
     <>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Ticket #{ticket.id.slice(0, 8)}
           </p>
-          <h3 className="mt-1 text-base font-semibold text-slate-950">
+          <h3 className="mt-1 font-display text-base font-bold text-white">
             {ticket.title}
           </h3>
         </div>
@@ -51,25 +51,25 @@ export function TicketCard({ ticket, detailHref }: TicketCardProps) {
         </div>
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-        <div>
-          <dt className="font-medium text-slate-500">Location</dt>
-          <dd className="mt-0.5 text-slate-800">{ticket.location}</dd>
+      <dl className="mt-4 grid gap-3 text-xs text-slate-400 sm:grid-cols-2">
+        <div className="rounded-lg bg-slate-950/40 p-2.5 border border-slate-800/50">
+          <dt className="font-semibold text-slate-400">Location</dt>
+          <dd className="mt-0.5 font-bold text-slate-200">{ticket.location}</dd>
         </div>
-        <div>
-          <dt className="font-medium text-slate-500">Asset</dt>
-          <dd className="mt-0.5 text-slate-800">{ticket.asset?.name ?? "Pending asset"}</dd>
+        <div className="rounded-lg bg-slate-950/40 p-2.5 border border-slate-800/50">
+          <dt className="font-semibold text-slate-400">Asset</dt>
+          <dd className="mt-0.5 font-bold text-slate-200">{ticket.asset?.name ?? "Pending asset"}</dd>
         </div>
         {ticket.reporter ? (
-          <div>
-            <dt className="font-medium text-slate-500">Reported by</dt>
-            <dd className="mt-0.5 text-slate-800">{ticket.reporter.name}</dd>
+          <div className="rounded-lg bg-slate-950/40 p-2.5 border border-slate-800/50">
+            <dt className="font-semibold text-slate-400">Reported by</dt>
+            <dd className="mt-0.5 font-bold text-slate-200">{ticket.reporter.name}</dd>
           </div>
         ) : null}
-        <div>
-          <dt className="font-medium text-slate-500">Assigned technician</dt>
-          <dd className="mt-0.5 text-slate-800">
-            {ticket.technician?.name ?? "Not assigned"}
+        <div className="rounded-lg bg-slate-950/40 p-2.5 border border-slate-800/50">
+          <dt className="font-semibold text-slate-400">Technician</dt>
+          <dd className="mt-0.5 font-bold text-slate-200">
+            {ticket.technician?.name ?? "Unassigned"}
           </dd>
         </div>
       </dl>
@@ -78,7 +78,7 @@ export function TicketCard({ ticket, detailHref }: TicketCardProps) {
 
   if (!detailHref) {
     return (
-      <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg backdrop-blur-md">
         {content}
       </article>
     );
@@ -87,7 +87,7 @@ export function TicketCard({ ticket, detailHref }: TicketCardProps) {
   return (
     <Link
       href={detailHref}
-      className="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2"
+      className="block rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-sky-500/10 focus:outline-none focus:ring-2 focus:ring-sky-500"
     >
       {content}
     </Link>

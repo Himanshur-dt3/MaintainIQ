@@ -3,7 +3,7 @@ import type { Priority, TicketStatus } from "@prisma/client";
 const statusLabels: Record<TicketStatus, string> = {
   REPORTED: "Reported",
   ASSIGNED: "Assigned",
-  IN_PROGRESS: "In progress",
+  IN_PROGRESS: "In Progress",
   RESOLVED: "Resolved",
 };
 
@@ -15,17 +15,24 @@ const priorityLabels: Record<Priority, string> = {
 };
 
 const statusClasses: Record<TicketStatus, string> = {
-  REPORTED: "bg-sky-100 text-sky-800 ring-sky-200",
-  ASSIGNED: "bg-violet-100 text-violet-800 ring-violet-200",
-  IN_PROGRESS: "bg-amber-100 text-amber-900 ring-amber-200",
-  RESOLVED: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+  REPORTED: "bg-sky-500/10 text-sky-400 border-sky-500/30",
+  ASSIGNED: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+  IN_PROGRESS: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  RESOLVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+};
+
+const statusDotClasses: Record<TicketStatus, string> = {
+  REPORTED: "bg-sky-400 animate-pulse",
+  ASSIGNED: "bg-indigo-400",
+  IN_PROGRESS: "bg-amber-400 animate-pulse",
+  RESOLVED: "bg-emerald-400",
 };
 
 const priorityClasses: Record<Priority, string> = {
-  LOW: "bg-slate-100 text-slate-700 ring-slate-200",
-  MEDIUM: "bg-blue-100 text-blue-800 ring-blue-200",
-  HIGH: "bg-orange-100 text-orange-900 ring-orange-200",
-  CRITICAL: "bg-rose-100 text-rose-800 ring-rose-200",
+  LOW: "bg-slate-500/10 text-slate-400 border-slate-500/30",
+  MEDIUM: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+  HIGH: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  CRITICAL: "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20",
 };
 
 interface TicketStatusBadgeProps {
@@ -45,8 +52,9 @@ interface TicketPriorityBadgeProps {
 export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusClasses[status]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-bold ${statusClasses[status]}`}
     >
+      <span className={`h-1.5 w-1.5 rounded-full ${statusDotClasses[status]}`} />
       {statusLabels[status]}
     </span>
   );
@@ -61,7 +69,7 @@ export function TicketStatusBadge({ status }: TicketStatusBadgeProps) {
 export function TicketPriorityBadge({ priority }: TicketPriorityBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${priorityClasses[priority]}`}
+      className={`inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-bold ${priorityClasses[priority]}`}
     >
       {priorityLabels[priority]}
     </span>

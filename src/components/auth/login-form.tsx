@@ -8,9 +8,9 @@ interface LoginFormProps {
 }
 
 const DEMO_ACCOUNTS = [
-  { label: "Admin", email: "admin@maintainiq.demo" },
-  { label: "Technician", email: "technician@maintainiq.demo" },
-  { label: "Reporter", email: "reporter@maintainiq.demo" },
+  { label: "Admin", email: "admin@maintainiq.demo", roleColor: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30" },
+  { label: "Technician", email: "technician@maintainiq.demo", roleColor: "from-indigo-500/20 to-sky-500/20 text-indigo-300 border-indigo-500/30" },
+  { label: "Reporter", email: "reporter@maintainiq.demo", roleColor: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30" },
 ] as const;
 
 /**
@@ -54,68 +54,102 @@ export function LoginForm({ callbackUrl }: LoginFormProps) {
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
+    <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <label className="block text-sm font-semibold text-slate-800" htmlFor="email">
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-300" htmlFor="email">
           Email address
         </label>
-        <input
-          autoComplete="email"
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm outline-none transition focus:border-sky-600 focus:ring-2 focus:ring-sky-200"
-          id="email"
-          name="email"
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          type="email"
-          value={email}
-        />
+        <div className="relative">
+          <input
+            autoComplete="email"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition duration-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+            id="email"
+            name="email"
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="name@maintainiq.demo"
+            required
+            type="email"
+            value={email}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-semibold text-slate-800" htmlFor="password">
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-300" htmlFor="password">
           Password
         </label>
-        <input
-          autoComplete="current-password"
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 shadow-sm outline-none transition focus:border-sky-600 focus:ring-2 focus:ring-sky-200"
-          id="password"
-          name="password"
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          type="password"
-          value={password}
-        />
+        <div className="relative">
+          <input
+            autoComplete="current-password"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition duration-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+            id="password"
+            name="password"
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••••••"
+            required
+            type="password"
+            value={password}
+          />
+        </div>
       </div>
 
       {errorMessage ? (
-        <p
+        <div
           aria-live="polite"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-sm font-medium text-rose-300 backdrop-blur-md"
           role="alert"
         >
           {errorMessage}
-        </p>
+        </div>
       ) : null}
 
       <button
-        className="flex w-full justify-center rounded-md bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-sky-400"
+        className="flex w-full min-h-[46px] items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-sky-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition duration-300 hover:shadow-sky-500/40 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={isSubmitting}
         type="submit"
       >
-        {isSubmitting ? "Signing in…" : "Sign in"}
+        {isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Signing in…
+          </span>
+        ) : (
+          "Sign in to Dashboard"
+        )}
       </button>
 
-      <aside className="rounded-md border border-sky-100 bg-sky-50 p-4 text-sm text-slate-700">
-        <p className="font-semibold text-slate-900">Development demo accounts</p>
-        <ul className="mt-2 space-y-1">
+      <div className="pt-2">
+        <div className="relative flex items-center justify-center">
+          <div className="w-full border-t border-slate-800" />
+          <span className="absolute bg-slate-900 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Quick Demo Login
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-2">
           {DEMO_ACCOUNTS.map((account) => (
-            <li key={account.email}>
-              <span className="font-medium">{account.label}:</span> {account.email}
-            </li>
+            <button
+              key={account.email}
+              type="button"
+              onClick={() => {
+                setEmail(account.email);
+                setPassword("MaintainIQDemo!2026");
+                setErrorMessage(null);
+              }}
+              className={`group flex items-center justify-between rounded-xl border bg-gradient-to-r px-4 py-2.5 text-left text-xs font-semibold transition duration-200 hover:scale-[1.01] hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-sky-500/50 ${account.roleColor}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-current" />
+                <span>{account.label}</span>
+              </div>
+              <span className="text-[11px] opacity-70 group-hover:opacity-100">{account.email}</span>
+            </button>
           ))}
-        </ul>
-        <p className="mt-2">Password: <code>MaintainIQDemo!2026</code></p>
-      </aside>
+        </div>
+      </div>
     </form>
   );
 }

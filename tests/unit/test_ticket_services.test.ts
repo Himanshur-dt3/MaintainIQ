@@ -124,7 +124,7 @@ describe("ticket validation and Claude response handling", () => {
     expect(resolutionResult.success).toBe(false);
   });
 
-  it("requires an actual reviewed value and a reviewer note", () => {
+  it("accepts review notes for retained values while requiring non-empty reviewer rationale", () => {
     const unchangedReview = reviewTicketSchema.safeParse({
       reviewNote: "Retain the existing AI outcome.",
     });
@@ -133,7 +133,7 @@ describe("ticket validation and Claude response handling", () => {
       reviewNote: " ",
     });
 
-    expect(unchangedReview.success).toBe(false);
+    expect(unchangedReview.success).toBe(true);
     expect(missingNote.success).toBe(false);
   });
 

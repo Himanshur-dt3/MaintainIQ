@@ -37,52 +37,53 @@ export default async function ReporterPage({
       : null;
 
   return (
-    <div className="space-y-8">
-      <section className="max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">
-          MaintainIQ · Reporter
-        </p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-          Welcome, {session.user.name ?? "Reporter"}.
-        </h1>
-        <p className="mt-3 text-base leading-7 text-slate-600">
-          Submit a maintenance issue and follow its status, validated AI triage,
-          linked asset, and service history from one place.
-        </p>
+    <div className="space-y-10 font-sans text-slate-100">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="relative z-10 max-w-3xl">
+          <span className="inline-block rounded-full bg-sky-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-sky-400 ring-1 ring-sky-500/30">
+            Reporter Portal
+          </span>
+          <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            Welcome back, {session.user.name ?? "Reporter"}.
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-400">
+            Report a maintenance issue below. Our server-side AI automatically categorizes your request, assigns urgency, and routes it to the right technician team.
+          </p>
+        </div>
       </section>
 
       <ReporterTicketIntake />
 
-      <section aria-labelledby="your-tickets-title">
+      <section aria-labelledby="your-tickets-title" className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-700">
-              Reporter-owned records
-            </p>
+            <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
+              Submitted Requests
+            </span>
             <h2
               id="your-tickets-title"
-              className="mt-2 text-2xl font-bold text-slate-950"
+              className="mt-1 font-display text-2xl font-bold text-white"
             >
-              Your tickets
+              Your Tickets
             </h2>
           </div>
-          <p className="text-sm text-slate-600">
+          <span className="rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-1.5 text-xs font-bold text-slate-400">
             {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
-          </p>
+          </span>
         </div>
 
         {tickets.length === 0 ? (
-          <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center shadow-sm">
-            <h3 className="text-base font-semibold text-slate-900">
+          <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-12 text-center">
+            <h3 className="font-display text-lg font-bold text-slate-300">
               No reported issues yet
             </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-              Use the form above to create your first maintenance request. Its
-              status and AI triage details will appear here after submission.
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
+              Use the form above to submit your first maintenance request. Track its progress and AI analysis here anytime.
             </p>
           </div>
         ) : (
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-2">
             {tickets.map((ticket) => (
               <TicketCard
                 key={ticket.id}
@@ -97,26 +98,26 @@ export default async function ReporterPage({
       {selectedTicket ? (
         <section
           aria-labelledby="ticket-detail-title"
-          className="scroll-mt-8 border-t border-slate-200 pt-8"
+          className="scroll-mt-8 space-y-6 border-t border-slate-800/80 pt-8"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-700">
-                Ticket detail
-              </p>
+              <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
+                Ticket Details
+              </span>
               <h2
                 id="ticket-detail-title"
-                className="mt-2 text-2xl font-bold text-slate-950"
+                className="mt-1 font-display text-2xl font-bold text-white"
               >
                 {selectedTicket.title}
               </h2>
             </div>
-            <p className="text-sm text-slate-600">
+            <span className="text-xs font-bold text-slate-500">
               Ticket #{selectedTicket.id.slice(0, 8)}
-            </p>
+            </span>
           </div>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             <AiAnalysisPanel analysis={selectedTicket.aiAnalysis} />
             <TicketHistoryTimeline history={selectedTicket.history} />
           </div>

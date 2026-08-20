@@ -32,7 +32,7 @@ const issueTypeLabels: Record<IssueType, string> = {
   HVAC: "HVAC",
   INTERNET_IT: "Internet & IT",
   APPLIANCE: "Appliance",
-  STRUCTURAL_GENERAL: "Structural & general",
+  STRUCTURAL_GENERAL: "Structural & General",
 };
 
 function formatHistoryAction(action: string): string {
@@ -54,50 +54,63 @@ export function AiAnalysisPanel({ analysis }: AiAnalysisPanelProps) {
     return (
       <section
         aria-labelledby="ai-analysis-title"
-        className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl"
       >
-        <h2 id="ai-analysis-title" className="text-lg font-semibold text-slate-950">
-          AI triage
+        <h2 id="ai-analysis-title" className="font-display text-lg font-bold text-white">
+          AI Triage Analysis
         </h2>
-        <p className="mt-2 text-sm text-slate-600">
-          No validated AI recommendation is available for this ticket.
+        <p className="mt-2 text-xs text-slate-400">
+          No AI recommendation is recorded for this ticket.
         </p>
       </section>
     );
   }
 
+  const confidencePercent = Math.round(analysis.confidence * 100);
+
   return (
     <section
       aria-labelledby="ai-analysis-title"
-      className="rounded-xl border border-sky-100 bg-sky-50 p-5 shadow-sm"
+      className="rounded-3xl border border-sky-500/30 bg-gradient-to-b from-sky-950/40 via-slate-900/80 to-slate-900/90 p-6 shadow-2xl backdrop-blur-xl"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="ai-analysis-title" className="text-lg font-semibold text-slate-950">
-          AI triage
-        </h2>
-        <p className="text-sm font-medium text-sky-800">
-          {Math.round(analysis.confidence * 100)}% confidence
-        </p>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-800 pb-4">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400">
+            System Intelligence
+          </span>
+          <h2 id="ai-analysis-title" className="font-display text-lg font-bold text-white">
+            AI Triage Analysis
+          </h2>
+        </div>
+        <div className="flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-bold text-sky-300">
+          <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+          <span>{confidencePercent}% Confidence</span>
+        </div>
       </div>
-      <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="font-medium text-slate-600">Suggested issue type</dt>
-          <dd className="mt-1 text-slate-950">{issueTypeLabels[analysis.issueType]}</dd>
+
+      <dl className="mt-5 grid gap-4 text-xs sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
+          <dt className="font-bold uppercase text-slate-400">Suggested Issue Type</dt>
+          <dd className="mt-1 font-bold text-slate-100">{issueTypeLabels[analysis.issueType]}</dd>
         </div>
-        <div>
-          <dt className="font-medium text-slate-600">Suggested priority</dt>
-          <dd className="mt-1 text-slate-950">{analysis.priority}</dd>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5">
+          <dt className="font-bold uppercase text-slate-400">Suggested Priority</dt>
+          <dd className="mt-1 font-bold text-slate-100">{analysis.priority}</dd>
         </div>
-        <div className="sm:col-span-2">
-          <dt className="font-medium text-slate-600">Suggested action</dt>
-          <dd className="mt-1 whitespace-pre-wrap text-slate-950">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:col-span-2">
+          <dt className="font-bold uppercase text-slate-400">Recommended Specialist</dt>
+          <dd className="mt-1 font-bold text-sky-300">{analysis.recommendedTechnician}</dd>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:col-span-2">
+          <dt className="font-bold uppercase text-slate-400">Suggested Action</dt>
+          <dd className="mt-1 whitespace-pre-wrap font-medium text-slate-200">
             {analysis.suggestedAction}
           </dd>
         </div>
-        <div className="sm:col-span-2">
-          <dt className="font-medium text-slate-600">Possible causes</dt>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 sm:col-span-2">
+          <dt className="font-bold uppercase text-slate-400">Possible Causes</dt>
           <dd className="mt-2">
-            <ul className="list-disc space-y-1 pl-5 text-slate-950">
+            <ul className="list-disc space-y-1.5 pl-4 text-slate-300">
               {analysis.possibleCauses.map((cause) => (
                 <li key={cause}>{cause}</li>
               ))}
@@ -105,12 +118,6 @@ export function AiAnalysisPanel({ analysis }: AiAnalysisPanelProps) {
           </dd>
         </div>
       </dl>
-      <p className="mt-4 border-t border-sky-200 pt-4 text-sm text-slate-700">
-        Recommended specialist:{" "}
-        <span className="font-semibold text-slate-950">
-          {analysis.recommendedTechnician}
-        </span>
-      </p>
     </section>
   );
 }
@@ -125,40 +132,55 @@ export function TicketHistoryTimeline({ history }: TicketHistoryTimelineProps) {
   return (
     <section
       aria-labelledby="ticket-history-title"
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl"
     >
-      <h2 id="ticket-history-title" className="text-lg font-semibold text-slate-950">
-        Ticket history
-      </h2>
+      <div className="border-b border-slate-800 pb-4">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400">
+          Audit Trail
+        </span>
+        <h2 id="ticket-history-title" className="font-display text-lg font-bold text-white">
+          Ticket Activity History
+        </h2>
+      </div>
+
       {history.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-600">
-          There are no recorded ticket events yet.
+        <p className="mt-4 text-xs text-slate-500">
+          No recorded events for this ticket yet.
         </p>
       ) : (
-        <ol className="mt-5 space-y-5 border-l border-slate-200 pl-5">
+        <ol className="mt-6 space-y-6 border-l border-slate-800 pl-6">
           {history.map((entry) => (
             <li key={entry.id} className="relative">
               <span
                 aria-hidden="true"
-                className="absolute -left-[1.72rem] top-1 h-3 w-3 rounded-full border-2 border-white bg-sky-600"
+                className="absolute -left-[1.95rem] top-1.5 h-3 w-3 rounded-full border-2 border-slate-900 bg-sky-500 ring-4 ring-sky-500/20"
               />
-              <p className="font-medium text-slate-950">
-                {formatHistoryAction(entry.action)}
-              </p>
-              <p className="mt-1 text-sm text-slate-600">
-                {entry.actor?.name ?? "System"} ·{" "}
-                {entry.createdAt.toLocaleString("en-US", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="font-display text-sm font-bold text-white">
+                  {formatHistoryAction(entry.action)}
+                </p>
+                <span className="text-[10px] font-semibold text-slate-500">
+                  {new Date(entry.createdAt).toLocaleString("en-US", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                Actor: <span className="font-semibold text-slate-200">{entry.actor?.name ?? "System Auto"}</span>
+                {entry.actor?.role ? (
+                  <span className="ml-1.5 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase font-bold text-slate-300">
+                    {entry.actor.role}
+                  </span>
+                ) : null}
               </p>
               {entry.note ? (
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-800">
+                <div className="mt-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs leading-relaxed text-slate-300">
                   {entry.note}
-                </p>
+                </div>
               ) : null}
               {entry.previousValue || entry.newValue ? (
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-[11px] font-mono text-slate-500">
                   {entry.previousValue ?? "—"} → {entry.newValue ?? "—"}
                 </p>
               ) : null}

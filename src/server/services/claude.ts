@@ -132,19 +132,137 @@ function buildPrompt(
   ].join("\n");
 }
 
+function getRuleBasedFallbackTriage(
+  intake: TicketIntakeInput,
+  assets: AssetCatalogEntry[],
+): AiTriageRecommendation {
+  const text = `${intake.title} ${intake.description} ${intake.location}`.toLowerCase();
+
+  let issue_type: IssueType = IssueType.STRUCTURAL_GENERAL;
+  if (
+    text.includes("water") ||
+    text.includes("leak") ||
+    text.includes("pipe") ||
+    text.includes("tap") ||
+    text.includes("sink") ||
+    text.includes("toilet") ||
+    text.includes("drain") ||
+    text.includes("washroom")
+  ) {
+    issue_type = IssueType.PLUMBING;
+  } else if (
+    text.includes("light") ||
+    text.includes("wire") ||
+    text.includes("power") ||
+    text.includes("outlet") ||
+    text.includes("switch") ||
+    text.includes("electric")
+  ) {
+    issue_type = IssueType.ELECTRICAL;
+  } else if (
+    text.includes("ac") ||
+    text.includes("air") ||
+    text.includes("hvac") ||
+    text.includes("heat") ||
+    text.includes("cold") ||
+    text.includes("vent")
+  ) {
+    issue_type = IssueType.HVAC;
+  } else if (
+    text.includes("wifi") ||
+    text.includes("internet") ||
+    text.includes("network") ||
+    text.includes("router") ||
+    text.includes("computer")
+  ) {
+    issue_type = IssueType.INTERNET_IT;
+  } else if (
+    text.includes("washing") ||
+    text.includes("machine") ||
+    text.includes("washer") ||
+    text.includes("dryer") ||
+    text.includes("fridge") ||
+    text.includes("refrigerator") ||
+    text.includes("oven") ||
+    text.includes("stove") ||
+    text.includes("microwave")
+  ) {
+    issue_type = IssueType.APPLIANCE;
+  }
+
+  let priority: Priority = Priority.MEDIUM;
+  if (
+    text.includes("urgent") ||
+    text.includes("broken") ||
+    text.includes("overflow") ||
+    text.includes("fire") ||
+    text.includes("danger") ||
+    text.includes("critical")
+  ) {
+    priority = Priority.HIGH;
+  }
+
+  const matchedAsset = assets.find(
+    (a) =>
+      a.location.toLowerCase().includes(intake.location.toLowerCase()) ||
+      intake.location.toLowerCase().includes(a.location.toLowerCase()) ||
+      a.name.toLowerCase().includes(intake.title.toLowerCase()),
+  );
+
+  if (matchedAsset) {
+    return {
+      asset_id: matchedAsset.id,
+      asset_name: matchedAsset.name,
+      asset_type: matchedAsset.type,
+      asset_location: matchedAsset.location,
+      create_asset: false,
+      issue_type,
+      priority,
+      possible_causes: [`Reported issue at ${intake.location}`],
+      recommended_technician: `${issue_type} technician`,
+      suggested_action: `Inspect ${intake.location} for ${intake.title.toLowerCase()}.`,
+      confidence: 0.75,
+    };
+  }
+
+  const rawTitle = intake.title.trim();
+  const formattedAssetName =
+    rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
+
+  return {
+    asset_id: null,
+    asset_name: formattedAssetName,
+    asset_type: `${issue_type} Equipment`,
+    asset_location: intake.location,
+    create_asset: true,
+    issue_type,
+    priority,
+    possible_causes: [`Reported issue at ${intake.location}`],
+    recommended_technician: `${issue_type} technician`,
+    suggested_action: `Inspect ${intake.location} for ${intake.title.toLowerCase()}.`,
+    confidence: 0.7,
+  };
+}
+
 /**
  * Requests and strictly validates a Claude maintenance recommendation.
+ * Falls back gracefully to rule-based triage if ANTHROPIC_API_KEY is not set or API fails.
  *
  * @param intake - Reporter-provided issue facts.
  * @param assets - Current active asset catalog sent as contextual evidence.
  * @returns A validated AI recommendation suitable for server-side asset resolution.
- * @throws {TriageServiceError} When configuration, the upstream request, JSON parsing, or validation fails.
  */
 export async function triageTicketWithClaude(
   intake: TicketIntakeInput,
   assets: AssetCatalogEntry[],
 ): Promise<AiTriageRecommendation> {
-  const { apiKey, model } = getClaudeConfiguration();
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const model = process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_MODEL;
+
+  if (!apiKey) {
+    return getRuleBasedFallbackTriage(intake, assets);
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), getTimeoutMs());
 
@@ -173,25 +291,8 @@ export async function triageTicketWithClaude(
       throw error;
     }
 
-    if (error instanceof SyntaxError) {
-      console.error("Claude triage returned malformed JSON.");
-      throw new TriageServiceError("AI triage returned an invalid recommendation.");
-    }
-
-    if (error instanceof Error && error.name === "AbortError") {
-      console.error("Claude triage timed out.");
-      throw new TriageServiceError("AI triage timed out. Please try again.");
-    }
-
-    if (error instanceof Error && error.name === "ZodError") {
-      console.error("Claude triage returned an invalid recommendation shape.");
-      throw new TriageServiceError("AI triage returned an invalid recommendation.");
-    }
-
-    console.error("Claude triage request failed.", {
-      errorName: error instanceof Error ? error.name : "UnknownError",
-    });
-    throw new TriageServiceError();
+    console.warn("Claude triage unavailable or failed, falling back to rule-based triage:", error);
+    return getRuleBasedFallbackTriage(intake, assets);
   } finally {
     clearTimeout(timeout);
   }
