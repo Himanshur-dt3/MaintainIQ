@@ -1,4 +1,4 @@
-import type { IssueType } from "@prisma/client";
+﻿import type { IssueType } from "@prisma/client";
 
 interface AiAnalysisPanelProps {
   analysis: {
@@ -148,7 +148,7 @@ export function TicketHistoryTimeline({ history }: TicketHistoryTimelineProps) {
           No recorded events for this ticket yet.
         </p>
       ) : (
-        <ol className="mt-6 space-y-6 border-l border-slate-800 pl-6">
+        <ol className="dashboard-history-scroll mt-6 space-y-6 border-l border-slate-800 pl-6">
           {history.map((entry) => (
             <li key={entry.id} className="relative">
               <span
@@ -181,7 +181,7 @@ export function TicketHistoryTimeline({ history }: TicketHistoryTimelineProps) {
               ) : null}
               {entry.previousValue || entry.newValue ? (
                 <p className="mt-2 text-[11px] font-mono text-slate-500">
-                  {entry.previousValue ?? "—"} → {entry.newValue ?? "—"}
+                  {entry.previousValue ?? "--"} {"->"} {entry.newValue ?? "--"}
                 </p>
               ) : null}
             </li>
@@ -191,3 +191,7 @@ export function TicketHistoryTimeline({ history }: TicketHistoryTimelineProps) {
     </section>
   );
 }
+
+
+
+

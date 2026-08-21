@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireUser } from "@/src/server/auth/guards";
@@ -6,6 +6,7 @@ import { toApiErrorResponse } from "@/src/server/http/api-errors";
 import {
   addTicketWorkNote,
   assignTicket,
+  reanalyzeTicket,
   reviewTicket,
   resolveTicket,
   startTicketWork,
@@ -18,7 +19,7 @@ import {
   ticketIdSchema,
 } from "@/src/lib/validation/tickets";
 
-const actionSchema = z.enum(["assign", "review", "start", "note", "resolve"]);
+const actionSchema = z.enum(["assign", "review", "start", "note", "resolve", "reanalyze"]);
 
 type TicketActionRouteContext = {
   params: { ticketId: string; action: string };
@@ -71,6 +72,11 @@ export async function POST(
         );
         return NextResponse.json({ history }, { status: 201 });
       }
+      case "reanalyze": {
+        const analysis = await reanalyzeTicket(actor, ticketId);
+        return NextResponse.json({ analysis });
+      }
+
       case "resolve": {
         const ticket = await resolveTicket(
           actor,
@@ -84,3 +90,4 @@ export async function POST(
     return toApiErrorResponse(error);
   }
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { IssueType, Priority, TicketStatus } from "@prisma/client";
 import { useMemo, useState } from "react";
@@ -338,13 +338,13 @@ export function AdminTicketManagement({
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="ticket-operations-scroll space-y-4">
           {filteredTickets.map((ticket) => {
             const latestWorkNote = ticket.history?.find(
               (entry) => entry.action === "WORK_NOTE_ADDED" && entry.note,
             );
 
-            // AI Smart Dispatch — only shown for unassigned, non-resolved tickets
+            // AI Smart Dispatch -- only shown for unassigned, non-resolved tickets
             const dispatchRec =
               !ticket.technician && ticket.status !== "RESOLVED"
                 ? recommendTechnicianDispatch(ticket.issueType, ticket.priority, technicians)
@@ -358,7 +358,7 @@ export function AdminTicketManagement({
               MODERATE: "text-amber-400 border-amber-500/30 bg-amber-500/10",
               HIGH_RISK: "text-rose-400 border-rose-500/30 bg-rose-500/10",
             };
-            const healthIcons = { HEALTHY: "✓", MODERATE: "⚠", HIGH_RISK: "⛔" };
+            const healthIcons = { HEALTHY: "OK", MODERATE: "! ", HIGH_RISK: "!!" };
 
             return (
               <article
@@ -374,7 +374,7 @@ export function AdminTicketManagement({
                       {ticket.title}
                     </h3>
                     <p className="mt-1 text-xs text-slate-400">
-                      <span className="font-semibold text-slate-200">{ticket.asset.name}</span> · {ticket.location} · Reported by{" "}
+                      <span className="font-semibold text-slate-200">{ticket.asset.name}</span> | {ticket.location} | Reported by{" "}
                       <span className="font-semibold text-slate-200">{ticket.reporter.name}</span>
                     </p>
                   </div>
@@ -397,7 +397,7 @@ export function AdminTicketManagement({
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/10 p-3 text-xs backdrop-blur-md">
                     <div>
                       <p className="font-bold text-[10px] uppercase tracking-wider text-violet-400">
-                        ⚡ AI Smart Dispatch Recommendation
+                        ✦ AI Smart Dispatch Recommendation
                       </p>
                       <p className="mt-0.5 font-semibold text-slate-200">
                         {dispatchRec.technicianName}
@@ -413,7 +413,7 @@ export function AdminTicketManagement({
                       onClick={() => assign(ticket.id, dispatchRec.technicianId)}
                       className="shrink-0 rounded-xl border border-violet-500/50 bg-violet-500/20 px-3.5 py-2 text-xs font-bold text-violet-200 transition hover:bg-violet-500/30 disabled:opacity-50"
                     >
-                      {busyTicketId === ticket.id ? "Assigning…" : "Auto-Assign →"}
+                      {busyTicketId === ticket.id ? "Assigning..." : "Auto-Assign ->"}
                     </button>
                   </div>
                 ) : null}
@@ -421,7 +421,7 @@ export function AdminTicketManagement({
                 {/* Asset Health Warning */}
                 {health.riskLevel === "HIGH_RISK" ? (
                   <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                    <span className="font-bold">⛔ High Failure Risk: </span>
+                    <span className="font-bold">!! High Failure Risk: </span>
                     {health.preventativeRecommendation}
                   </div>
                 ) : null}
@@ -453,7 +453,7 @@ export function AdminTicketManagement({
                       <p className="mt-1 text-xs text-slate-400">
                         AI Suggested: {labelValue(ticket.aiAnalysis.issueType)} / {labelValue(ticket.aiAnalysis.priority)} at {Math.round(ticket.aiAnalysis.confidence * 100)}% confidence
                         {ticket.aiAnalysis.suggestedAction ? (
-                          <span className="block mt-0.5 text-slate-500 italic">"{ticket.aiAnalysis.suggestedAction}"</span>
+                          <span className="block mt-0.5 text-slate-500 italic">&quot;{ticket.aiAnalysis.suggestedAction}&quot;</span>
                         ) : null}
                       </p>
                     ) : null}
@@ -495,7 +495,7 @@ export function AdminTicketManagement({
                       <option value="" className="bg-slate-900">Choose technician</option>
                       {technicians.map((technician) => (
                         <option key={technician.id} value={technician.id} className="bg-slate-900">
-                          {technician.name} · {technician._count.assignedTickets} open
+                          {technician.name} | {technician._count.assignedTickets} open
                         </option>
                       ))}
                     </select>
@@ -524,7 +524,7 @@ export function AdminTicketManagement({
                   {selectedHistoryTicket.title}
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  Ticket #{selectedHistoryTicket.id.slice(0, 8)} · {selectedHistoryTicket.location}
+                  Ticket #{selectedHistoryTicket.id.slice(0, 8)} | {selectedHistoryTicket.location}
                 </p>
               </div>
               <button
@@ -571,7 +571,7 @@ export function AdminTicketManagement({
                       ) : null}
                       {entry.previousValue || entry.newValue ? (
                         <p className="mt-2 text-[11px] font-mono text-slate-500">
-                          {entry.previousValue ?? "—"} → {entry.newValue ?? "—"}
+                          {entry.previousValue ?? "--"} {"->"} {entry.newValue ?? "--"}
                         </p>
                       ) : null}
                     </li>
@@ -683,7 +683,7 @@ export function AdminTicketManagement({
                 className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-sky-500/20 hover:brightness-110 disabled:opacity-50"
               >
                 {busyTicketId === reviewTicketId
-                  ? "Saving Review…"
+                  ? "Saving Review..."
                   : "Save Reviewed Override"}
               </button>
             </div>
@@ -693,3 +693,14 @@ export function AdminTicketManagement({
     </section>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -43,17 +43,19 @@ enum AssetStatus {
 }
 
 model User {
-  id               String          @id @default(uuid())
-  name             String
-  email            String          @unique
-  passwordHash     String
-  role             Role
-  jobTitle         String?
-  reportedTickets  Ticket[]        @relation("ReportedTickets")
-  assignedTickets  Ticket[]        @relation("AssignedTickets")
-  historyEntries   TicketHistory[] @relation("HistoryActor")
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id                String          @id @default(uuid())
+  name              String
+  email             String          @unique
+  passwordHash      String
+  role              Role
+  jobTitle          String?
+  reportedTickets   Ticket[]        @relation("ReportedTickets")
+  assignedTickets   Ticket[]        @relation("AssignedTickets")
+  historyEntries    TicketHistory[] @relation("HistoryActor")
+  reporterReviews   Review[]        @relation("ReporterReviews")
+  technicianReviews Review[]        @relation("TechnicianReviews")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([role])
 }
@@ -88,6 +90,7 @@ model Ticket {
   technician      User?           @relation("AssignedTickets", fields: [technicianId], references: [id], onDelete: SetNull)
   aiAnalysis      AIAnalysis?
   history         TicketHistory[]
+  review          Review?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -101,17 +104,17 @@ model Ticket {
 }
 
 model AIAnalysis {
-  id                      String    @id @default(uuid())
-  ticketId                String    @unique
-  issueType               IssueType
-  priority                Priority
-  possibleCauses          String[]
-  recommendedTechnician   String
-  suggestedAction         String
-  confidence              Float
-  ticket                  Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  ticketId              String    @unique
+  issueType             IssueType
+  priority              Priority
+  possibleCauses        String[]
+  recommendedTechnician String
+  suggestedAction       String
+  confidence            Float
+  ticket                Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 model TicketHistory {
@@ -128,4 +131,23 @@ model TicketHistory {
 
   @@index([ticketId, createdAt])
   @@index([actorId])
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  ticketId     String   @unique
+  reporterId   String
+  technicianId String
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ticket     Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  reporter   User   @relation("ReporterReviews", fields: [reporterId], references: [id], onDelete: Restrict)
+  technician User   @relation("TechnicianReviews", fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@index([reporterId])
+  @@index([technicianId])
+  @@index([createdAt])
 }

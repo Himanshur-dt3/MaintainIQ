@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { IssueType, Priority, TicketStatus } from "@prisma/client";
 import { useState } from "react";
@@ -243,7 +243,7 @@ export function TechnicianTicketWorkspace({
                     </div>
                   </div>
                   <p className="mt-3 text-xs text-slate-400">
-                    <span className="font-semibold text-slate-200">{ticket.asset.name}</span> · {ticket.location}
+                    <span className="font-semibold text-slate-200">{ticket.asset.name}</span> | {ticket.location}
                   </p>
                 </button>
 
@@ -254,7 +254,7 @@ export function TechnicianTicketWorkspace({
                     disabled={isStarting}
                     className="mt-4 w-full rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-sky-500/20 hover:brightness-110 disabled:opacity-50"
                   >
-                    {isStarting ? "Starting Work…" : "Start Work"}
+                    {isStarting ? "Starting Work..." : "Start Work"}
                   </button>
                 ) : null}
               </article>
@@ -328,7 +328,7 @@ export function TechnicianTicketWorkspace({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                     <div className="flex items-center gap-2">
                       <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/20 text-xs text-indigo-400">
-                        ⚡
+                        ⚠
                       </span>
                       <h4 id="ai-guide-title" className="font-display text-sm font-bold text-white">
                         AI Diagnostic & Troubleshooting Guide
@@ -343,7 +343,7 @@ export function TechnicianTicketWorkspace({
                     {/* Safety Warnings */}
                     <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-300">
                       <p className="font-bold uppercase tracking-wider text-[10px] text-amber-400">
-                        ⚠️ Required Safety Protocol
+                        ! ï¸ Required Safety Protocol
                       </p>
                       <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-200">
                         {guide.safetyWarnings.map((warning, i) => (
@@ -363,7 +363,7 @@ export function TechnicianTicketWorkspace({
                             key={i}
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1 text-[11px] font-semibold text-slate-200"
                           >
-                            <span className="text-sky-400">✓</span> {tool}
+                            <span className="text-sky-400">OK</span> {tool}
                           </span>
                         ))}
                       </div>
@@ -392,7 +392,7 @@ export function TechnicianTicketWorkspace({
 
             {selectedTicket.status === "ASSIGNED" ? (
               <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-300">
-                Click "Start Work" above to begin recording notes or resolving this ticket.
+                Click &quot;Start Work&quot; above to begin recording notes or resolving this ticket.
               </div>
             ) : null}
 
@@ -431,7 +431,7 @@ export function TechnicianTicketWorkspace({
                     className="mt-4 rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-300 hover:bg-sky-500/20 disabled:opacity-50"
                   >
                     {busyAction === `${selectedTicket.id}:note`
-                      ? "Saving Note…"
+                      ? "Saving Note..."
                       : "Save Work Note"}
                   </button>
                 </form>
@@ -471,7 +471,7 @@ export function TechnicianTicketWorkspace({
                     className="mt-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/20 hover:brightness-110 disabled:opacity-50"
                   >
                     {busyAction === `${selectedTicket.id}:resolve`
-                      ? "Resolving Ticket…"
+                      ? "Resolving Ticket..."
                       : "Save & Complete Resolution"}
                   </button>
                 </form>
@@ -500,3 +500,9 @@ export function TechnicianTicketWorkspace({
     </section>
   );
 }
+
+
+
+
+
+

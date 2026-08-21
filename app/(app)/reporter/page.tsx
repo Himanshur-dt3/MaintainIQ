@@ -1,4 +1,4 @@
-import type { TicketCardData } from "@/src/components/ticket-card";
+﻿import type { TicketCardData } from "@/src/components/ticket-card";
 import { ReporterTicketIntake } from "@/src/components/reporter-ticket-intake";
 import { TicketCard } from "@/src/components/ticket-card";
 import {
@@ -83,12 +83,13 @@ export default async function ReporterPage({
             </p>
           </div>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="dashboard-reporter-ticket-scroll grid gap-5 lg:grid-cols-2">
             {tickets.map((ticket) => (
               <TicketCard
                 key={ticket.id}
                 ticket={ticket as TicketCardData}
-                detailHref={`/reporter?ticket=${ticket.id}`}
+                detailHref={`/reporter/tickets/${ticket.id}`}
+                showDescription
               />
             ))}
           </div>
@@ -126,3 +127,7 @@ export default async function ReporterPage({
     </div>
   );
 }
+
+
+
+

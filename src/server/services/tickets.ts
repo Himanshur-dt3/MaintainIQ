@@ -297,6 +297,79 @@ export async function createTicketFromTriage(
  * @throws {AuthorizationError} When the actor is not a reporter.
  * @throws {NotFoundError} When the selected asset does not exist.
  */
+
+/**
+ * Re-runs AI analysis against the current persisted ticket facts.
+ * This updates the AIAnalysis record without changing the ticket workflow state.
+ */
+export async function reanalyzeTicket(
+  actor: TicketActor,
+  ticketId: string,
+) {
+  if (actor.role !== "ADMIN") {
+    throw new AuthorizationError(
+      "Only administrators may re-run ticket AI analysis.",
+    );
+  }
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      location: true,
+    },
+  });
+
+  if (!ticket) {
+    throw new NotFoundError("Ticket not found.");
+  }
+
+  const assetCatalog: AssetCatalogEntry[] = await prisma.asset.findMany({
+    where: { status: AssetStatus.ACTIVE },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      location: true,
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const analysis = await triageTicketWithClaude(
+    {
+      title: ticket.title,
+      description: ticket.description,
+      location: ticket.location,
+    },
+    assetCatalog,
+  );
+
+  const savedAnalysis = await prisma.aIAnalysis.upsert({
+    where: { ticketId: ticket.id },
+    create: {
+      ticketId: ticket.id,
+      issueType: analysis.issue_type,
+      priority: analysis.priority,
+      possibleCauses: analysis.possible_causes,
+      recommendedTechnician: analysis.recommended_technician,
+      suggestedAction: analysis.suggested_action,
+      confidence: analysis.confidence,
+    },
+    update: {
+      issueType: analysis.issue_type,
+      priority: analysis.priority,
+      possibleCauses: analysis.possible_causes,
+      recommendedTechnician: analysis.recommended_technician,
+      suggestedAction: analysis.suggested_action,
+      confidence: analysis.confidence,
+    },
+  });
+
+  return savedAnalysis;
+}
+
 export async function createTicket(
   actor: TicketActor,
   input: CreateTicketInput,

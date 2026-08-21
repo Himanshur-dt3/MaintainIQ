@@ -1,10 +1,10 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   * {
@@ -14,103 +14,738 @@
   html {
     min-height: 100%;
     scroll-behavior: smooth;
+    background: #111315;
   }
 
   body {
     min-height: 100vh;
     margin: 0;
-    background: #0f172a;
-    color: #0f172a;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #111315;
+    color: #eeeeea;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
     letter-spacing: -0.02em;
   }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::selection {
+    background: #d7d8d3;
+    color: #17191b;
+  }
 }
 
-/* Glassmorphism & Custom Utility Classes */
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+@layer components {
+  .glass-card {
+    background: rgba(24, 27, 29, 0.94);
+    border: 1px solid #303438;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .glass-nav {
+    background: rgba(21, 23, 24, 0.96);
+    border-bottom: 1px solid #303438;
+  }
+
+  .glass-dark {
+    background: rgba(24, 27, 29, 0.96);
+    border: 1px solid #303438;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
 }
 
-.glass-nav {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
 }
 
-.glass-dark {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+::-webkit-scrollbar-track {
+  background: #151718;
 }
 
-.glow-brand {
-  position: relative;
+::-webkit-scrollbar-thumb {
+  background: #383c3f;
+  border-radius: 999px;
 }
-.glow-brand::after {
-  content: '';
+
+::-webkit-scrollbar-thumb:hover {
+  background: #50555a;
+}
+
+
+/* =========================================================
+   MaintainIQ Dashboard Interactions
+   ========================================================= */
+
+.dashboard-interactive {
+  position: relative !important;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.dashboard-interactive:hover {
+  transform: translateY(-4px) !important;
+  border-color: #60a5fa !important;
+  background-color: #1d2125 !important;
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(96, 165, 250, 0.10) !important;
+  z-index: 100 !important;
+}
+
+.dashboard-interactive::after {
+  content: attr(data-tooltip);
   position: absolute;
-  inset: -1px;
-  background: linear-gradient(135deg, #0284c7, #6366f1, #3b82f6);
-  border-radius: inherit;
-  z-index: -1;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  width: max-content;
+  max-width: 280px;
+  padding: 9px 11px;
+  border: 1px solid #3b4652;
+  border-radius: 7px;
+  background: #0c1116;
+  color: #d9e2ec;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  visibility: hidden;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 150ms ease,
+    visibility 150ms ease,
+    transform 150ms ease;
+  z-index: 9999;
 }
-.glow-brand:hover::after {
+
+.dashboard-interactive::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  width: 8px;
+  height: 8px;
+  background: #0c1116;
+  border-right: 1px solid #3b4652;
+  border-bottom: 1px solid #3b4652;
+  transform: translateX(-50%) rotate(45deg);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10000;
+}
+
+.dashboard-interactive:hover::after,
+.dashboard-interactive:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dashboard-interactive:hover::after {
+  transform: translate(-50%, 0);
+}
+
+/* Tooltip positioned toward the left for sidebar/edge elements */
+.dashboard-interactive-left::after {
+  left: 20px;
+  transform: translate(0, 8px);
+}
+
+.dashboard-interactive-left::before {
+  left: 20px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.dashboard-interactive-left:hover::after {
+  transform: translate(0, 0);
+}
+
+/* Activity items */
+.dashboard-activity-item {
+  position: relative;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 8px;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dashboard-activity-item:hover {
+  transform: translateX(4px);
+  border-color: #334155;
+  background: #1d2125;
+  box-shadow: 0 6px 18px rgba(0,0,0,.22);
+}
+
+/* Keep tooltips above surrounding dashboard content */
+.dashboard-tooltip-layer {
+  position: relative;
+  z-index: 200;
+}
+
+/* Accessibility */
+.dashboard-interactive:focus-visible,
+.dashboard-activity-item:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-interactive,
+  .dashboard-activity-item,
+  .dashboard-interactive::after,
+  .dashboard-interactive::before {
+    transition: none !important;
+  }
+
+  .dashboard-interactive:hover,
+  .dashboard-activity-item:hover {
+    transform: none !important;
+  }
+}
+
+/* Interactive donut segments */
+.dashboard-donut-segment {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.dashboard-donut-segment path {
+  transition:
+    stroke-width 180ms ease,
+    filter 180ms ease,
+    opacity 180ms ease;
+}
+
+.dashboard-donut-segment:hover {
+  transform: translateY(-4px) scale(1.035);
+  z-index: 10;
+}
+
+.dashboard-donut-segment:hover path {
+  stroke-width: 46;
+  filter: brightness(1.12) drop-shadow(0 5px 7px rgba(0, 0, 0, 0.35));
+}
+
+.dashboard-donut-segment:not(:hover) {
+  opacity: 0.78;
+}
+
+.dashboard-donut-segment:hover {
   opacity: 1;
 }
 
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
+.dashboard-donut-tooltip-text {
+  pointer-events: none;
+  opacity: 0;
+  fill: #f0f0ec;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: opacity 150ms ease;
+}
+
+.dashboard-donut-segment:hover .dashboard-donut-tooltip-text {
+  opacity: 1;
+}
+
+.dashboard-donut-total {
+  fill: #f0f0ec;
+  font-size: 31px;
+  font-weight: 700;
+}
+
+.dashboard-donut-label {
+  fill: #737873;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-donut-segment,
+  .dashboard-donut-segment path,
+  .dashboard-donut-tooltip-text {
+    transition: none;
   }
-  50% {
-    box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+
+  .dashboard-donut-segment:hover {
+    transform: none;
   }
 }
 
-.animate-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
+
+
+/* Compact Recent Activity scrolling */
+
+
+
+
+
+
+
+
+
+
+/* Recent Tickets only - sliding drawer */
+.dashboard-recent-tickets {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  z-index: 70;
+  transform: translateY(-50%);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
+.dashboard-recent-tickets-tab {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transform: translateY(-50%) translateX(calc(-100% + 38px));
+  border: 1px solid #394047;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: #181b1d;
+  padding: 10px 13px;
+  color: #d8d9d4;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.dashboard-recent-tickets:hover .dashboard-recent-tickets-tab,
+.dashboard-recent-tickets:focus-within .dashboard-recent-tickets-tab {
+  transform: translateY(-50%) translateX(0);
+  background: #202427;
+}
+
+.dashboard-recent-tickets-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.45);
+}
+
+.dashboard-recent-tickets-drawer {
+  width: min(900px, 92vw);
+  height: 88vh;
+  overflow: hidden;
+  border: 1px solid #303438;
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+  background: #101416;
+  box-shadow: 18px 0 45px rgba(0, 0, 0, 0.38);
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+  pointer-events: none;
+}
+
+.dashboard-recent-tickets:hover .dashboard-recent-tickets-drawer,
+.dashboard-recent-tickets:focus-within .dashboard-recent-tickets-drawer {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.dashboard-recent-tickets-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #2d3033;
+  background: #151819;
+  padding: 18px 20px;
+}
+
+.dashboard-recent-tickets-body {
+  height: calc(88vh - 86px);
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #3b4146 transparent;
+}
+
+.dashboard-recent-tickets-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dashboard-recent-tickets-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-recent-tickets-body::-webkit-scrollbar-thumb {
+  background: #3b4146;
+  border-radius: 999px;
+}
+
+.dashboard-recent-tickets-body::-webkit-scrollbar-thumb:hover {
+  background: #596168;
+}
+
+.dashboard-recent-tickets-body > section {
+  margin: 0;
+}
+
+.dashboard-recent-tickets-body > section > div {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .dashboard-recent-tickets-drawer {
+    width: 94vw;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-recent-tickets-tab,
+  .dashboard-recent-tickets-drawer {
+    transition: none;
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+.dashboard-activity-slide:hover,
+.dashboard-activity-slide:focus-within {
+  transform: translateX(0);
+  box-shadow: -12px 0 30px rgba(0, 0, 0, 0.28);
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-activity-slide {
+    transition: none;
+  }
 }
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+
+.dashboard-activity-slide:hover,
+.dashboard-activity-slide:focus-within {
+  max-height: 520px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
 }
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-activity-slide {
+    transition: none;
+  }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+
+
+
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ /* FINAL: Recent Activity visible vertical drawer */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Never move the drawer when hovering */
+
+
+/* Recent Activity - fixed visible panel with internal vertical scroll */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Disable every drawer hover movement */
+
+
+@media (max-width: 1024px) {
+  
+}
+
+/* Recent Activity - permanent vertical scroll panel */
+.dashboard-activity-vertical {
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.dashboard-activity-vertical > div:first-child {
+  flex-shrink: 0;
+}
+
+.dashboard-activity-vertical > ul {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 20px 6px 20px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #454b50 transparent;
+}
+
+.dashboard-activity-vertical > ul::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dashboard-activity-vertical > ul::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-activity-vertical > ul::-webkit-scrollbar-thumb {
+  background: #454b50;
+  border-radius: 999px;
+}
+
+.dashboard-activity-vertical > ul::-webkit-scrollbar-thumb:hover {
+  background: #606870;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-activity-vertical {
+    height: 420px;
+    min-height: 420px;
+  }
+}
+
+/* Ticket Operations - permanent vertical scroll window */
+.dashboard-ticket-operations {
+  height: 620px;
+  min-height: 620px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #454b50 transparent;
+}
+
+.dashboard-ticket-operations::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dashboard-ticket-operations::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-ticket-operations::-webkit-scrollbar-thumb {
+  background: #454b50;
+  border-radius: 999px;
+}
+
+.dashboard-ticket-operations::-webkit-scrollbar-thumb:hover {
+  background: #606870;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-ticket-operations {
+    height: 520px;
+    min-height: 520px;
+  }
+}
+
+.ticket-operations-scroll {
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #454b50 transparent;
+}
+
+.ticket-operations-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ticket-operations-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ticket-operations-scroll::-webkit-scrollbar-thumb {
+  background: #454b50;
+  border-radius: 999px;
+}
+
+.ticket-operations-scroll::-webkit-scrollbar-thumb:hover {
+  background: #606870;
+}
+
+.dashboard-overview-kpis > a {
+  border-color: #303d52 !important;
+  background:
+    linear-gradient(
+      145deg,
+      #151c29 0%,
+      #181b1d 65%
+    ) !important;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.dashboard-overview-kpis > a:hover {
+  border-color: #4f78a8 !important;
+  background:
+    linear-gradient(
+      145deg,
+      #192437 0%,
+      #1b2023 70%
+    ) !important;
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(96, 165, 250, 0.08);
+}
+
+.dashboard-overview-kpis > a:first-child {
+  border-top: 2px solid #60a5fa !important;
+}
+
+.dashboard-overview-kpis > a:nth-child(2) {
+  border-top: 2px solid #60a5fa !important;
+}
+
+.dashboard-overview-kpis > a:nth-child(3) {
+  border-top: 2px solid #3b82f6 !important;
+}
+
+.dashboard-overview-kpis > a:nth-child(4) {
+  border-top: 2px solid #60a5fa !important;
+}
+
+.dashboard-overview-kpis > a:hover:first-child,
+.dashboard-overview-kpis > a:hover:nth-child(2),
+.dashboard-overview-kpis > a:hover:nth-child(3),
+.dashboard-overview-kpis > a:hover:nth-child(4) {
+  border-top-color: #93c5fd !important;
+}
+
+.dashboard-reporter-ticket-scroll {
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #454b50 transparent;
+}
+
+.dashboard-reporter-ticket-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-reporter-ticket-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-reporter-ticket-scroll::-webkit-scrollbar-thumb {
+  background: #454b50;
+  border-radius: 999px;
+}
+
+.dashboard-reporter-ticket-scroll::-webkit-scrollbar-thumb:hover {
+  background: #606870;
+}
+
+.dashboard-history-scroll {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent;
+}
+
+.dashboard-history-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-history-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-history-scroll::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 999px;
+}
+
+.dashboard-history-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }

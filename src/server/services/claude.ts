@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+﻿import Anthropic from "@anthropic-ai/sdk";
 import { IssueType, Priority } from "@prisma/client";
 
 import {
@@ -39,19 +39,6 @@ function getTimeoutMs(): number {
   }
 
   return configuredTimeout;
-}
-
-function getClaudeConfiguration(): { apiKey: string; model: string } {
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-  const model = process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_MODEL;
-
-  if (!apiKey) {
-    throw new TriageServiceError(
-      "AI triage is unavailable because its server configuration is incomplete.",
-    );
-  }
-
-  return { apiKey, model };
 }
 
 /**
@@ -132,6 +119,167 @@ function buildPrompt(
   ].join("\n");
 }
 
+function deriveRuleBasedCauses(
+  intake: TicketIntakeInput,
+  issueType: IssueType,
+): string[] {
+  const text = (intake.title + " " + intake.description).toLowerCase();
+  const causes: string[] = [];
+
+  if (issueType === IssueType.HVAC) {
+    if (
+      text.includes("weak airflow") ||
+      text.includes("low airflow") ||
+      text.includes("airflow")
+    ) {
+      causes.push(
+        "Restricted airflow from a blocked filter, obstructed return path, or blower problem is plausible because the report mentions airflow symptoms.",
+      );
+    }
+
+    if (
+      text.includes("not cooling") ||
+      text.includes("warm") ||
+      text.includes("hot") ||
+      text.includes("temperature")
+    ) {
+      causes.push(
+        "Cooling-system performance failure is plausible because the reported temperature symptom indicates that the unit may be operating without providing sufficient cooling.",
+      );
+    }
+
+    if (
+      text.includes("thermostat") ||
+      text.includes("sensor") ||
+      text.includes("setpoint") ||
+      text.includes("temperature")
+    ) {
+      causes.push(
+        "A thermostat or temperature-sensor problem is possible because the reported temperature behavior can result from incorrect sensing or control.",
+      );
+    }
+  }
+
+  if (issueType === IssueType.PLUMBING) {
+    if (
+      text.includes("leak") ||
+      text.includes("water") ||
+      text.includes("drip")
+    ) {
+      causes.push(
+        "A leaking or failed connection is plausible because the report contains water or leakage symptoms.",
+      );
+    }
+
+    if (
+      text.includes("drain") ||
+      text.includes("slow") ||
+      text.includes("overflow")
+    ) {
+      causes.push(
+        "A blocked or restricted drain is plausible because the reported drainage behavior is consistent with reduced flow.",
+      );
+    }
+
+    if (text.includes("pressure") || text.includes("flow")) {
+      causes.push(
+        "A supply-pressure or flow restriction is possible because the report describes abnormal water flow.",
+      );
+    }
+  }
+
+  if (issueType === IssueType.ELECTRICAL) {
+    if (
+      text.includes("power") ||
+      text.includes("outlet") ||
+      text.includes("socket") ||
+      text.includes("switch")
+    ) {
+      causes.push(
+        "A failed electrical connection, outlet, switch, or circuit component is plausible because the report describes a power-related symptom.",
+      );
+    }
+
+    if (text.includes("flicker") || text.includes("intermittent")) {
+      causes.push(
+        "A loose connection or unstable circuit is possible because the reported symptom is intermittent or flickering.",
+      );
+    }
+
+    if (text.includes("trip") || text.includes("breaker")) {
+      causes.push(
+        "An overloaded circuit, short circuit, or protective-breaker trip is possible because the report mentions breaker behavior.",
+      );
+    }
+  }
+
+  if (issueType === IssueType.INTERNET_IT) {
+    if (
+      text.includes("wifi") ||
+      text.includes("internet") ||
+      text.includes("network") ||
+      text.includes("connection")
+    ) {
+      causes.push(
+        "A network connectivity or access-point issue is plausible because the report describes loss or degradation of network access.",
+      );
+    }
+
+    if (text.includes("slow") || text.includes("speed")) {
+      causes.push(
+        "Network congestion, signal degradation, or an upstream connectivity problem is possible because the report describes reduced performance.",
+      );
+    }
+  }
+
+  if (issueType === IssueType.APPLIANCE) {
+    if (
+      text.includes("not working") ||
+      text.includes("stopped") ||
+      text.includes("broken")
+    ) {
+      causes.push(
+        "A failed electrical, mechanical, or control component is plausible because the appliance is reported as non-functional.",
+      );
+    }
+
+    if (
+      text.includes("noise") ||
+      text.includes("sound") ||
+      text.includes("vibration")
+    ) {
+      causes.push(
+        "A worn, loose, or misaligned mechanical component is possible because the report describes abnormal noise or vibration.",
+      );
+    }
+  }
+
+  if (issueType === IssueType.STRUCTURAL_GENERAL) {
+    if (
+      text.includes("crack") ||
+      text.includes("damage") ||
+      text.includes("broken")
+    ) {
+      causes.push(
+        "Material damage or structural deterioration is plausible because the report explicitly describes physical damage.",
+      );
+    }
+
+    if (text.includes("door") || text.includes("window")) {
+      causes.push(
+        "A damaged, misaligned, or worn door/window component is possible because the reported symptom involves its operation.",
+      );
+    }
+  }
+
+  if (causes.length === 0) {
+    causes.push(
+      "The available ticket information does not identify a specific root cause. An on-site diagnostic inspection is required before assigning a definitive cause.",
+    );
+  }
+
+  return causes.slice(0, 3);
+}
 function getRuleBasedFallbackTriage(
   intake: TicketIntakeInput,
   assets: AssetCatalogEntry[],
@@ -218,9 +366,9 @@ function getRuleBasedFallbackTriage(
       create_asset: false,
       issue_type,
       priority,
-      possible_causes: [`Reported issue at ${intake.location}`],
+      possible_causes: deriveRuleBasedCauses(intake, issue_type),
       recommended_technician: `${issue_type} technician`,
-      suggested_action: `Inspect ${intake.location} for ${intake.title.toLowerCase()}.`,
+      suggested_action: `Investigate the symptoms described in the ticket: ${intake.title.toLowerCase()}. Start with the highest-probability cause and verify the relevant component before replacing parts.`,
       confidence: 0.75,
     };
   }
@@ -237,9 +385,9 @@ function getRuleBasedFallbackTriage(
     create_asset: true,
     issue_type,
     priority,
-    possible_causes: [`Reported issue at ${intake.location}`],
+    possible_causes: deriveRuleBasedCauses(intake, issue_type),
     recommended_technician: `${issue_type} technician`,
-    suggested_action: `Inspect ${intake.location} for ${intake.title.toLowerCase()}.`,
+    suggested_action: `Investigate the symptoms described in the ticket: ${intake.title.toLowerCase()}. Start with the highest-probability cause and verify the relevant component before replacing parts.`,
     confidence: 0.7,
   };
 }
@@ -297,3 +445,5 @@ export async function triageTicketWithClaude(
     clearTimeout(timeout);
   }
 }
+
+
