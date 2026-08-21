@@ -29,7 +29,8 @@ export function getRoleHomePath(role: Role): string {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  providers: [
+  trustHost: true,
+providers: [
     Credentials({
       name: "Email and password",
       credentials: {
@@ -112,3 +113,4 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 },
   },
 });
+
