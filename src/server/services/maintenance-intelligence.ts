@@ -174,11 +174,15 @@ export async function getAssetMaintenanceInsights(): Promise<
       ).length;
 
       const criticalTickets = asset.tickets.filter(
-        (ticket) => ticket.priority === Priority.CRITICAL,
+        (ticket) =>
+          ticket.status !== TicketStatus.RESOLVED &&
+          ticket.priority === Priority.CRITICAL,
       ).length;
 
       const highPriorityTickets = asset.tickets.filter(
-        (ticket) => ticket.priority === Priority.HIGH,
+        (ticket) =>
+          ticket.status !== TicketStatus.RESOLVED &&
+          ticket.priority === Priority.HIGH,
       ).length;
 
       const issueCounts = new Map<string, number>();
@@ -218,14 +222,14 @@ export async function getAssetMaintenanceInsights(): Promise<
       // Current operational condition.
       riskPoints += Math.min(openTickets * 18, 36);
 
-      // Severity of active maintenance work.
+      // Severity of currently active maintenance work. Resolved tickets are intentionally excluded from this signal.
       riskPoints += Math.min(criticalTickets * 25, 35);
       riskPoints += Math.min(highPriorityTickets * 12, 24);
 
       // Recent failures are more important than old failures.
       riskPoints += Math.min(recentTickets * 9, 27);
 
-      // Historical recurrence.
+      // Historical recurrence. Resolved and unresolved tickets contribute here as maintenance history.
       riskPoints += Math.min(totalTickets * 3, 18);
 
       // Increasing failure activity is an additional warning signal.
