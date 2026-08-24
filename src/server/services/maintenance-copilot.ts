@@ -205,6 +205,21 @@ function fallbackAnswer(
     (item) => item.riskLevel === "HIGH" || item.riskLevel === "CRITICAL",
   );
 
+  const prioritizedInsights = [...insights].sort((a, b) => {
+    if (b.priorityScore !== a.priorityScore) {
+      return b.priorityScore - a.priorityScore;
+    }
+
+    if (b.criticalTickets !== a.criticalTickets) {
+      return b.criticalTickets - a.criticalTickets;
+    }
+
+    if (b.highPriorityTickets !== a.highPriorityTickets) {
+      return b.highPriorityTickets - a.highPriorityTickets;
+    }
+
+    return a.assetName.localeCompare(b.assetName);
+  });
 
   const noHistory = insights.filter(
     (item) => item.trend === "NO_HISTORY",
@@ -245,7 +260,7 @@ function fallbackAnswer(
     questionLower.includes("priority") ||
     questionLower.includes("first")
   ) {
-    const item = highRisk[0] ?? insights[0];
+    const item = prioritizedInsights[0];
 
     if (!item) {
       return {
