@@ -89,12 +89,14 @@ export default async function MaintenancePlanDetailPage({
           ← Maintenance Plans
         </Link>
 
-        <Link
-          href={`/admin/maintenance-plans/${plan.id}/edit`}
-          className="rounded-md border border-[#3b4043] bg-[#202326] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#c7cac5] transition hover:border-[#555b5e] hover:bg-[#272a2d]"
-        >
-          Edit Plan
-        </Link>
+        {plan.status !== "COMPLETED" && plan.status !== "CANCELLED" ? (
+          <Link
+            href={`/admin/maintenance-plans/${plan.id}/edit`}
+            className="rounded-md border border-[#3b4043] bg-[#202326] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#c7cac5] transition hover:border-[#555b5e] hover:bg-[#272a2d]"
+          >
+            Edit Plan
+          </Link>
+        ) : null}
       </div>
 
       <section className="rounded-lg border border-[#303438] bg-[#181b1d]">

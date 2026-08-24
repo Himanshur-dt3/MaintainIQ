@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { requireUser } from "@/src/server/auth/guards";
 import { listTechniciansForAdmin } from "@/src/server/services/tickets";
@@ -18,6 +19,14 @@ export default async function EditMaintenancePlanPage({
   };
 
   const plan = await getMaintenancePlan(actor, params.planId);
+
+  if (
+    plan.status === "COMPLETED" ||
+    plan.status === "CANCELLED"
+  ) {
+    redirect(`/admin/maintenance-plans/${plan.id}`);
+  }
+
   const technicians = await listTechniciansForAdmin(actor);
 
   return (
