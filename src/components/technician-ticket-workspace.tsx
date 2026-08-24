@@ -87,6 +87,14 @@ export function TechnicianTicketWorkspace({
   const selectedTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
 
+  const activeMaintenancePlans = maintenancePlans.filter(
+    (plan) => plan.status === "ACTIVE" || plan.status === "PAUSED",
+  );
+
+  const maintenancePlanHistory = maintenancePlans.filter(
+    (plan) => plan.status === "COMPLETED" || plan.status === "CANCELLED",
+  );
+
   async function postAction(
     ticketId: string,
     action: "start" | "note" | "resolve",
@@ -580,24 +588,24 @@ export function TechnicianTicketWorkspace({
         </div>
 
         <span className="rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-1.5 text-xs font-bold text-slate-400">
-          {maintenancePlans.length}{" "}
-          {maintenancePlans.length === 1 ? "plan" : "plans"} assigned
+          {activeMaintenancePlans.length}{" "}
+          {activeMaintenancePlans.length === 1 ? "plan" : "plans"} active
         </span>
       </div>
 
-      {maintenancePlans.length === 0 ? (
+      {activeMaintenancePlans.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-12 text-center">
           <h3 className="font-display text-lg font-bold text-white">
-            No Maintenance Plans Assigned
+            No Active Maintenance Plans
           </h3>
           <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
-            Maintenance plans assigned to you by an administrator will appear
+            Active or paused maintenance plans assigned to you will appear
             here.
           </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {maintenancePlans.map((plan) => {
+          {activeMaintenancePlans.map((plan) => {
             const isOverdue =
               plan.status === "ACTIVE" &&
               new Date(plan.nextDueAt).getTime() < Date.now();
@@ -607,11 +615,9 @@ export function TechnicianTicketWorkspace({
             const statusClass =
               displayStatus === "OVERDUE"
                 ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-                : displayStatus === "CANCELLED"
-                  ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
-                  : displayStatus === "PAUSED"
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+                : displayStatus === "PAUSED"
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
 
             const nextDue = new Date(plan.nextDueAt).toLocaleDateString(
               "en-US",
@@ -729,7 +735,97 @@ export function TechnicianTicketWorkspace({
           })}
         </div>
       )}
-      </section>
+
+      {maintenancePlanHistory.length > 0 ? (
+        <section
+          aria-labelledby="technician-maintenance-history-title"
+          className="pt-5"
+        >
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                History
+              </span>
+              <h3
+                id="technician-maintenance-history-title"
+                className="mt-1 font-display text-lg font-bold text-white"
+              >
+                Completed & Cancelled Plans
+              </h3>
+            </div>
+
+            <span className="text-[10px] font-semibold text-slate-500">
+              {maintenancePlanHistory.length}{" "}
+              {maintenancePlanHistory.length === 1 ? "record" : "records"}
+            </span>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {maintenancePlanHistory.map((plan) => {
+              const isCompleted = plan.status === "COMPLETED";
+
+              return (
+                <article
+                  key={plan.id}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h4 className="truncate text-sm font-bold text-slate-200">
+                        {plan.title}
+                      </h4>
+                      <p className="mt-1 text-[10px] text-slate-500">
+                        {plan.asset.name}
+                        {" · "}
+                        {plan.asset.location}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${
+                        isCompleted
+                          ? "border-sky-500/25 bg-sky-500/5 text-sky-300"
+                          : "border-rose-500/25 bg-rose-500/5 text-rose-300"
+                      }`}
+                    >
+                      {plan.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-2.5">
+                      <p className="text-[8px] font-bold uppercase tracking-wider text-slate-600">
+                        Priority
+                      </p>
+                      <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                        {plan.priority}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-2.5">
+                      <p className="text-[8px] font-bold uppercase tracking-wider text-slate-600">
+                        Last Completed
+                      </p>
+                      <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                        {plan.lastCompletedAt
+                          ? new Date(
+                              plan.lastCompletedAt,
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+    </section>
     </>
   );
 }
