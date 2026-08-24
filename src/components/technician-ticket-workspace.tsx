@@ -82,6 +82,7 @@ export function TechnicianTicketWorkspace({
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [actionState, setActionState] = useState<ActionState>(null);
+  const [completingPlanId, setCompletingPlanId] = useState<string | null>(null);
 
   const selectedTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
@@ -113,6 +114,44 @@ export function TechnicianTicketWorkspace({
       return true;
     } finally {
       setBusyAction(null);
+    }
+  }
+
+  async function completeMaintenancePlan(planId: string) {
+    if (!window.confirm("Mark this maintenance plan as completed?")) {
+      return;
+    }
+
+    setCompletingPlanId(planId);
+    setActionState(null);
+
+    try {
+      const response = await fetch(
+        `/api/maintenance-plans/${planId}/technician-complete`,
+        {
+          method: "POST",
+        },
+      );
+
+      const error = await getActionError(response);
+
+      if (!response.ok) {
+        setActionState({
+          kind: "error",
+          message:
+            error ?? "The maintenance plan could not be completed.",
+        });
+        return;
+      }
+
+      setActionState({
+        kind: "success",
+        message: "Maintenance plan completed. Refreshing your workload.",
+      });
+
+      window.location.reload();
+    } finally {
+      setCompletingPlanId(null);
     }
   }
 
@@ -671,6 +710,19 @@ export function TechnicianTicketWorkspace({
                       {plan.description}
                     </p>
                   </div>
+                ) : null}
+
+                {plan.status === "ACTIVE" ? (
+                  <button
+                    type="button"
+                    onClick={() => completeMaintenancePlan(plan.id)}
+                    disabled={completingPlanId === plan.id}
+                    className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/20 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {completingPlanId === plan.id
+                      ? "Completing Maintenance..."
+                      : "Complete Maintenance"}
+                  </button>
                 ) : null}
               </article>
             );
