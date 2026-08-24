@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireUser } from "@/src/server/auth/guards";
+import { listTechniciansForAdmin } from "@/src/server/services/tickets";
 import { getMaintenancePlan } from "@/src/server/services/maintenance-plans";
 import MaintenancePlanEditForm from "./maintenance-plan-edit-form";
 
@@ -17,6 +18,7 @@ export default async function EditMaintenancePlanPage({
   };
 
   const plan = await getMaintenancePlan(actor, params.planId);
+  const technicians = await listTechniciansForAdmin(actor);
 
   return (
     <main className="mx-auto w-full max-w-[1000px] px-6 py-8">
@@ -44,7 +46,7 @@ export default async function EditMaintenancePlanPage({
           </p>
         </header>
 
-        <MaintenancePlanEditForm plan={plan} />
+        <MaintenancePlanEditForm plan={plan} technicians={technicians} />
       </section>
     </main>
   );

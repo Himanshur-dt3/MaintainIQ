@@ -20,8 +20,19 @@ type Plan = {
   } | null;
 };
 
+type Technician = {
+  id: string;
+  name: string;
+  email: string;
+  jobTitle: string | null;
+  _count: {
+    assignedTickets: number;
+  };
+};
+
 interface Props {
   plan: Plan;
+  technicians: Technician[];
 }
 
 const inputClass =
@@ -40,7 +51,10 @@ function toDateInput(value: Date | string) {
   return `${year}-${month}-${day}`;
 }
 
-export default function MaintenancePlanEditForm({ plan }: Props) {
+export default function MaintenancePlanEditForm({
+  plan,
+  technicians,
+}: Props) {
   const router = useRouter();
 
   const [title, setTitle] = useState(plan.title);
@@ -217,26 +231,33 @@ export default function MaintenancePlanEditForm({ plan }: Props) {
 
         <div className="md:col-span-2">
           <label className={labelClass} htmlFor="technicianId">
-            Technician ID
+            Assigned Technician
           </label>
 
-          <input
+          <select
             id="technicianId"
             value={technicianId}
             onChange={(event) => setTechnicianId(event.target.value)}
             className={inputClass}
-            placeholder="Leave blank to unassign"
-          />
+          >
+            <option value="">Unassigned</option>
+
+            {technicians.map((technician) => (
+              <option key={technician.id} value={technician.id}>
+                {technician.name}
+                {technician.jobTitle
+                  ? ` — ${technician.jobTitle}`
+                  : ""}
+                {` · ${technician._count.assignedTickets} active ticket${
+                  technician._count.assignedTickets === 1 ? "" : "s"
+                }`}
+              </option>
+            ))}
+          </select>
 
           <p className="mt-1.5 text-[10px] text-[#5f645f]">
-            The API validates that the selected ID belongs to a technician.
+            Select a technician responsible for this maintenance plan.
           </p>
-
-          {plan.technician && (
-            <p className="mt-1 text-[10px] text-[#777c77]">
-              Current technician: {plan.technician.name}
-            </p>
-          )}
         </div>
 
         <div className="md:col-span-2">
