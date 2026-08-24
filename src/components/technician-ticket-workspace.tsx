@@ -600,7 +600,7 @@ export function TechnicianTicketWorkspace({
           </h3>
           <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
             Active or paused maintenance plans assigned to you will appear
-            here.
+            here. Completed and cancelled plans remain available in History below.
           </p>
         </div>
       ) : (
