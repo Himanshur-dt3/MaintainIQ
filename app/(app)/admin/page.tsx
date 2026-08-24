@@ -54,7 +54,8 @@ export default async function AdminPage() {
   ]);
 
   const tickets = allTickets.slice(0, 6);
-  const priorityMaintenanceInsights = [...maintenanceInsights]
+  const priorityMaintenanceInsights = maintenanceInsights
+    .filter((item) => item.riskLevel !== "LOW")
     .sort((a, b) => {
       if (b.priorityScore !== a.priorityScore) {
         return b.priorityScore - a.priorityScore;
