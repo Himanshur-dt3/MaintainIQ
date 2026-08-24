@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { Role } from "@prisma/client";
 import Link from "next/link";
@@ -22,6 +22,7 @@ const roleNavigation: Record<
 > = {
   ADMIN: [
     { href: "/admin", label: "Dashboard", icon: "D" },
+    { href: "/admin/maintenance-plans", label: "Maintenance Plans", icon: "M" },
     { href: "/admin/past-tickets", label: "Past Tickets", icon: "T" },
     { href: "/admin/reviews", label: "Reviews", icon: "★" },
   ],

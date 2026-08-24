@@ -42,6 +42,28 @@ enum AssetStatus {
   RETIRED
 }
 
+enum MaintenancePlanStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceFrequency {
+  ONCE
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUALLY
+  ANNUALLY
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  INSPECTION
+  SERVICING
+}
+
 model User {
   id                String          @id @default(uuid())
   name              String
@@ -54,6 +76,7 @@ model User {
   historyEntries    TicketHistory[] @relation("HistoryActor")
   reporterReviews   Review[]        @relation("ReporterReviews")
   technicianReviews Review[]        @relation("TechnicianReviews")
+  assignedMaintenancePlans MaintenancePlan[] @relation("MaintenancePlanTechnician")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -65,9 +88,10 @@ model Asset {
   name      String      @unique
   type      String
   location  String
-  status    AssetStatus @default(ACTIVE)
-  tickets   Ticket[]
-  createdAt DateTime    @default(now())
+  status            AssetStatus        @default(ACTIVE)
+  tickets           Ticket[]
+  maintenancePlans  MaintenancePlan[]
+  createdAt         DateTime           @default(now())
   updatedAt DateTime    @updatedAt
 
   @@index([location])
@@ -115,6 +139,30 @@ model AIAnalysis {
   ticket                Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+}
+
+model MaintenancePlan {
+  id                String               @id @default(uuid())
+  assetId           String
+  technicianId      String?
+  title             String
+  description       String?
+  type              MaintenanceType      @default(PREVENTIVE)
+  frequency         MaintenanceFrequency @default(ONCE)
+  status            MaintenancePlanStatus @default(ACTIVE)
+  priority          Priority             @default(MEDIUM)
+  nextDueAt         DateTime
+  lastCompletedAt   DateTime?
+  notes             String?
+  asset             Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  technician        User?                @relation("MaintenancePlanTechnician", fields: [technicianId], references: [id], onDelete: SetNull)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([assetId])
+  @@index([technicianId])
+  @@index([status])
+  @@index([nextDueAt])
 }
 
 model TicketHistory {
