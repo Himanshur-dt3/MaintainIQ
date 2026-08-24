@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import type { IssueType, Priority, TicketStatus } from "@prisma/client";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -371,8 +372,13 @@ export function AdminTicketManagement({
                       Ticket #{ticket.id.slice(0, 8)}
                     </span>
                     <h3 className="mt-1 font-display text-lg font-bold text-white">
-                      {ticket.title}
-                    </h3>
+  <Link
+    href={`/admin/tickets/${ticket.id}`}
+    className="transition-colors hover:text-indigo-300"
+  >
+    {ticket.title}
+  </Link>
+</h3>
                     <p className="mt-1 text-xs text-slate-400">
                       <span className="font-semibold text-slate-200">{ticket.asset.name}</span> | {ticket.location} | Reported by{" "}
                       <span className="font-semibold text-slate-200">{ticket.reporter.name}</span>

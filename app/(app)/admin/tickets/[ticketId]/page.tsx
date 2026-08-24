@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReanalyzeTicketButton } from "@/src/components/reanalyze-ticket-button";
 
@@ -148,8 +148,8 @@ export default async function AdminTicketDetailPage({
         </div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
+      <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+        <div className="min-w-0 space-y-5">
           <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-6">
             <div className="border-b border-[#2d3033] pb-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
@@ -249,7 +249,7 @@ export default async function AdminTicketDetailPage({
           <TicketHistoryTimeline history={ticket.history} />
         </div>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
           <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
               AI Operations

@@ -302,6 +302,50 @@ export async function createTicketFromTriage(
  * Re-runs AI analysis against the current persisted ticket facts.
  * This updates the AIAnalysis record without changing the ticket workflow state.
  */
+function sanitizeAiSuggestedAction(
+  suggestedAction: string,
+  reporterText: string,
+): string {
+  const source = reporterText.toLowerCase();
+  const action = suggestedAction.trim();
+
+  // These details must not be introduced by AI unless they
+  // are explicitly supported by the reporter's own text.
+  const unsupportedDetailPatterns = [
+    /\bsize\b/i,
+    /\bwidth\b/i,
+    /\blength\b/i,
+    /\borientation\b/i,
+    /\bprogression\b/i,
+    /\bvisible progression\b/i,
+    /\bsettlement\b/i,
+    /\bfoundation movement\b/i,
+    /\bbuilding movement\b/i,
+    /\bwater staining\b/i,
+    /\befflorescence\b/i,
+    /\bcosmetic\b/i,
+    /\bstructural\b/i,
+    /\bunderlying movement\b/i,
+  ];
+
+  const introducesUnsupportedDetail = unsupportedDetailPatterns.some(
+    (pattern) => {
+      const match = pattern.exec(action);
+      if (!match) {
+        return false;
+      }
+
+      const matchedText = match[0].toLowerCase();
+      return !source.includes(matchedText);
+    },
+  );
+
+  if (introducesUnsupportedDetail) {
+    return "Review the reported issue, perform an appropriate inspection, document the findings, and determine the next maintenance step from those findings.";
+  }
+
+  return action;
+}
 export async function reanalyzeTicket(
   actor: TicketActor,
   ticketId: string,
@@ -346,6 +390,13 @@ export async function reanalyzeTicket(
     assetCatalog,
   );
 
+  const reporterText = `${ticket.title} ${ticket.description} ${ticket.location}`;
+
+  const safeSuggestedAction = sanitizeAiSuggestedAction(
+    analysis.suggested_action,
+    reporterText,
+  );
+
   const savedAnalysis = await prisma.aIAnalysis.upsert({
     where: { ticketId: ticket.id },
     create: {
@@ -354,7 +405,7 @@ export async function reanalyzeTicket(
       priority: analysis.priority,
       possibleCauses: analysis.possible_causes,
       recommendedTechnician: analysis.recommended_technician,
-      suggestedAction: analysis.suggested_action,
+      suggestedAction: safeSuggestedAction,
       confidence: analysis.confidence,
     },
     update: {
@@ -362,7 +413,7 @@ export async function reanalyzeTicket(
       priority: analysis.priority,
       possibleCauses: analysis.possible_causes,
       recommendedTechnician: analysis.recommended_technician,
-      suggestedAction: analysis.suggested_action,
+      suggestedAction: safeSuggestedAction,
       confidence: analysis.confidence,
     },
   });

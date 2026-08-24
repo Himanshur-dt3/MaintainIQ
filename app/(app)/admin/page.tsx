@@ -1,7 +1,10 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { IssueType, Priority, TicketStatus } from "@prisma/client";
 
 import { AdminTicketManagement } from "@/src/components/admin-ticket-management";
+import { MaintenanceCopilot } from "@/src/components/maintenance-copilot";
+import { getAssetMaintenanceInsights } from "@/src/server/services/maintenance-intelligence";
+import { generateMaintenanceAiBrief } from "@/src/server/services/claude";
 import { requireRole } from "@/src/server/auth/guards";
 import {
   getAdminDashboardMetrics,
@@ -43,13 +46,49 @@ export default async function AdminPage() {
     role: session.user.role,
   };
 
-  const [metrics, allTickets, technicians] = await Promise.all([
+  const [metrics, allTickets, technicians, maintenanceInsights] = await Promise.all([
     getAdminDashboardMetrics(actor),
     listAdminTickets(actor, {}),
     listTechniciansForAdmin(actor),
+    getAssetMaintenanceInsights(),
   ]);
 
   const tickets = allTickets.slice(0, 6);
+  const priorityMaintenanceInsights = [...maintenanceInsights]
+    .sort((a, b) => {
+      if (b.priorityScore !== a.priorityScore) {
+        return b.priorityScore - a.priorityScore;
+      }
+
+      return b.healthScore - a.healthScore;
+    })
+    .slice(0, 4);
+
+  /*
+   * Preventive Maintenance Queue
+   *
+   * Prioritize assets that have actionable maintenance evidence.
+   * Assets with no history are retained as baseline/watch items rather
+   * than being presented as proven healthy.
+   */
+  const preventiveMaintenanceQueue = [
+    ...maintenanceInsights.filter(
+      (item) =>
+        item.riskLevel === "CRITICAL" ||
+        item.riskLevel === "HIGH",
+    ),
+    ...maintenanceInsights.filter(
+      (item) =>
+        item.riskLevel === "MEDIUM" &&
+        item.dataConfidence !== "INSUFFICIENT",
+    ),
+    ...maintenanceInsights.filter(
+      (item) =>
+        item.riskLevel === "LOW" &&
+        item.dataConfidence === "INSUFFICIENT",
+    ),
+  ].slice(0, 6);
+  const maintenanceAiBrief = await generateMaintenanceAiBrief(maintenanceInsights);
 
   // Mutually exclusive ticket-status groups for the dashboard pie chart.
   const openCount = allTickets.filter(
@@ -188,11 +227,412 @@ const kpiValues = {
               </p>
 
               <span className="text-[10px] font-semibold text-[#aeb3ae] opacity-0 transition group-hover:opacity-100">
-                View tickets →
+                View tickets ?
               </span>
             </div>
           </Link>
         ))}
+      </section>
+
+      {/* MAINTENANCE INTELLIGENCE */}
+      <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
+        <div className="flex flex-col justify-between gap-3 border-b border-[#2d3033] pb-4 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
+              Maintenance Intelligence
+            </p>
+
+            <h2 className="mt-1 text-base font-bold text-[#ededE9]">
+              Assets Requiring Attention
+            </h2>
+
+            <p className="mt-1 text-[11px] text-[#686d68]">
+              Data-driven maintenance risk based on current workload, severity,
+              recent activity, and failure trends.
+            </p>
+          </div>
+
+          <div className="rounded-md border border-[#35393c] bg-[#202326] px-2.5 py-1.5 text-[10px] font-semibold text-[#929792]">
+            {maintenanceInsights.filter((item) => item.riskLevel !== "LOW").length}{" "}
+            Assets Need Attention
+          </div>
+        </div>
+
+        {priorityMaintenanceInsights.length > 0 ? (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {priorityMaintenanceInsights.map((insight) => {
+              const riskClasses = {
+                LOW: "border-[#39413d] bg-[#171c1a] text-[#8fbc9f]",
+                MEDIUM: "border-amber-500/20 bg-amber-500/[0.04] text-amber-300",
+                HIGH: "border-orange-500/25 bg-orange-500/[0.05] text-orange-300",
+                CRITICAL:
+                  "border-red-500/30 bg-red-500/[0.06] text-red-300",
+              } as const;
+
+              const trendLabel = {
+                NO_HISTORY: "No history",
+                NEW_ACTIVITY: "New activity",
+                IMPROVING: "Improving",
+                STABLE: "Stable",
+                WORSENING: "Worsening",
+              } as const;
+
+              return (
+                <article
+                  key={insight.assetId}
+                  className="rounded-lg border border-[#303438] bg-[#151819] p-4 transition hover:border-[#454a47]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-bold text-[#e6e7e2]">
+                        {insight.assetName}
+                      </h3>
+
+                      <p className="mt-1 text-[10px] text-[#707570]">
+                        {insight.assetType} Â· {insight.location}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.1em] ${
+                        riskClasses[insight.riskLevel]
+                      }`}
+                    >
+                      {insight.riskLevel}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-md border border-[#303438] bg-[#191c1e] px-3 py-2">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#686d68]">
+                        Priority Score
+                      </p>
+                      <p className="mt-1 text-lg font-bold tracking-tight text-[#ededE9]">
+                        {insight.priorityScore}
+                        <span className="ml-1 text-[10px] font-medium text-[#686d68]">
+                          /100
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="rounded-md border border-[#303438] bg-[#191c1e] px-3 py-2">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#686d68]">
+                        Data Confidence
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-[#d8d9d4]">
+                        {insight.dataConfidence}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#686d68]">
+                        Health Score
+                      </p>
+
+                      <p className="mt-1 text-2xl font-bold tracking-tight text-[#ededE9]">
+                        {insight.healthScore}
+                        <span className="ml-1 text-xs font-medium text-[#686d68]">
+                          /100
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="flex gap-4 text-right">
+                      <div>
+                        <p className="text-[9px] uppercase tracking-[0.1em] text-[#686d68]">
+                          Open
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-[#d8d9d4]">
+                          {insight.openTickets}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-[9px] uppercase tracking-[0.1em] text-[#686d68]">
+                          Recent
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-[#d8d9d4]">
+                          {insight.recentTickets}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 h-1 overflow-hidden rounded-full bg-[#292d2f]">
+                    <div
+                      className="h-full rounded-full bg-[#bfc2bd] transition-all"
+                      style={{ width: `${insight.healthScore}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-md border border-[#303438] bg-[#202326] px-2 py-1 text-[9px] font-semibold text-[#929792]">
+                      {trendLabel[insight.trend]}
+                    </span>
+
+                    {insight.dominantIssueType ? (
+                      <span className="rounded-md border border-[#303438] bg-[#202326] px-2 py-1 text-[9px] font-semibold text-[#929792]">
+                        {insight.dominantIssueType.replaceAll("_", " ")}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 rounded-md border border-[#303438] bg-[#191c1e] px-3 py-2">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#686d68]">
+                      Evidence Status
+                    </p>
+
+                    <p className="mt-1 text-[10px] leading-relaxed text-[#929792]">
+                      {insight.dataConfidence === "INSUFFICIENT"
+                        ? "No maintenance history is available. Treat this asset as a baseline item rather than a proven healthy asset."
+                        : insight.dataConfidence === "LIMITED"
+                          ? "Limited maintenance history. Current priority is actionable, but recurrence cannot yet be established."
+                          : "Sufficient maintenance history is available to support the current priority assessment."}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 border-t border-[#292d2f] pt-3">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#686d68]">
+                      Recommended Action
+                    </p>
+
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-[#aeb3ae]">
+                      {insight.recommendation}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-lg border border-[#303438] bg-[#151819] px-4 py-8 text-center">
+            <p className="text-sm font-semibold text-[#d8d9d4]">
+              No maintenance risks detected
+            </p>
+
+            <p className="mt-1 text-[11px] text-[#686d68]">
+              Current asset activity does not indicate elevated maintenance
+              risk.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* AI OPERATIONS BRIEF */}
+      <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
+        <div className="flex flex-col justify-between gap-3 border-b border-[#2d3033] pb-4 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
+              AI Operations Brief
+            </p>
+
+            <h2 className="mt-1 text-base font-bold text-[#ededE9]">
+              {maintenanceAiBrief.headline}
+            </h2>
+
+            <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-[#686d68]">
+              {maintenanceAiBrief.summary}
+            </p>
+          </div>
+
+          <span className="shrink-0 rounded-md border border-[#35393c] bg-[#202326] px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[#aeb3ae]">
+            Claude Analysis
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-[#303438] bg-[#151819] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#686d68]">
+              Priority Asset
+            </p>
+
+            <p className="mt-2 text-sm font-bold text-[#e6e7e2]">
+              {maintenanceAiBrief.priorityAsset}
+            </p>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-[#929792]">
+              {maintenanceAiBrief.priorityReason}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-[#303438] bg-[#151819] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#686d68]">
+              Recommended Action
+            </p>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-[#aeb3ae]">
+              {maintenanceAiBrief.recommendedAction}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-[#303438] bg-[#151819] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#686d68]">
+              System Pattern
+            </p>
+
+            <p className="mt-2 text-[11px] leading-relaxed text-[#aeb3ae]">
+              {maintenanceAiBrief.systemicPattern}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* MAINTENANCE COPILOT */}
+      <MaintenanceCopilot />
+
+      {/* PREVENTIVE MAINTENANCE QUEUE */}
+      <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
+        <div className="flex flex-col justify-between gap-3 border-b border-[#2d3033] pb-4 sm:flex-row sm:items-start">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
+              Preventive Maintenance
+            </p>
+
+            <h2 className="mt-1 text-base font-bold text-[#ededE9]">
+              Maintenance Action Queue
+            </h2>
+
+            <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-[#686d68]">
+              Assets requiring attention based on maintenance risk, activity
+              trends, workload, and available maintenance history.
+            </p>
+          </div>
+
+          <span className="shrink-0 rounded-md border border-[#35393c] bg-[#202326] px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[#aeb3ae]">
+            {preventiveMaintenanceQueue.length} Actions
+          </span>
+        </div>
+
+        {preventiveMaintenanceQueue.length > 0 ? (
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {preventiveMaintenanceQueue.map((item) => {
+              const isInsufficient =
+                item.dataConfidence === "INSUFFICIENT";
+
+              const isCritical =
+                item.riskLevel === "CRITICAL";
+
+              const isHigh =
+                item.riskLevel === "HIGH";
+
+              const action =
+                isInsufficient
+                  ? "Establish baseline and monitor"
+                  : isCritical
+                    ? "Immediate maintenance attention"
+                    : isHigh
+                      ? "Diagnostic inspection within 7 days"
+                      : item.trend === "WORSENING"
+                        ? "Investigate trend and consider preventive servicing"
+                        : item.openTickets > 0
+                          ? "Monitor active issue and inspect if it recurs"
+                          : "Inspect during next service window";
+
+              const reason = isInsufficient
+                ? "No maintenance history is available yet."
+                : [
+                    item.criticalTickets > 0
+                      ? `${item.criticalTickets} critical ticket${item.criticalTickets === 1 ? "" : "s"}`
+                      : null,
+                    item.openTickets > 0
+                      ? `${item.openTickets} open ticket${item.openTickets === 1 ? "" : "s"}`
+                      : null,
+                    item.trend === "WORSENING"
+                      ? "activity is increasing"
+                      : item.trend === "NEW_ACTIVITY"
+                        ? "new maintenance activity detected"
+                        : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") ||
+                  "Maintenance activity warrants routine monitoring.";
+
+              const riskClass =
+                isCritical
+                  ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                  : isHigh
+                    ? "border-orange-500/30 bg-orange-500/10 text-orange-300"
+                    : item.riskLevel === "MEDIUM"
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                      : "border-slate-500/30 bg-slate-500/10 text-slate-300";
+
+              return (
+                <article
+                  key={item.assetId}
+                  className="rounded-lg border border-[#303438] bg-[#151819] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[#e6e7e2]">
+                        {item.assetName}
+                      </p>
+
+                      <p className="mt-1 text-[10px] text-[#686d68]">
+                        {item.dominantIssueType
+                          ? item.dominantIssueType
+                              .toLowerCase()
+                              .replaceAll("_", " ")
+                          : "No dominant issue recorded"}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] ${riskClass}`}
+                    >
+                      {item.riskLevel}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-md border border-[#35393c] bg-[#202326] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.06em] text-[#929792]">
+                      {item.dataConfidence} DATA
+                    </span>
+
+                    <span className="rounded-md border border-[#35393c] bg-[#202326] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.06em] text-[#929792]">
+                      {item.trend.replaceAll("_", " ")}
+                    </span>
+
+                    <span className="rounded-md border border-[#35393c] bg-[#202326] px-2 py-1 text-[9px] font-semibold text-[#929792]">
+                      Health {item.healthScore}%
+                    </span>
+                  </div>
+
+                  <div className="mt-3 border-t border-[#2d3033] pt-3">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#686d68]">
+                      Why this asset
+                    </p>
+
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#929792]">
+                      {reason}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 rounded-md border border-[#303438] bg-[#1b1e20] px-3 py-2">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#686d68]">
+                      Recommended action
+                    </p>
+
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#d8d9d4]">
+                      {action}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-lg border border-[#303438] bg-[#151819] px-4 py-6 text-center">
+            <p className="text-xs font-semibold text-[#aeb3ae]">
+              No preventive actions currently identified.
+            </p>
+
+            <p className="mt-1 text-[10px] text-[#686d68]">
+              Continue routine monitoring as maintenance history accumulates.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* EXISTING TICKET MANAGEMENT */}
@@ -538,24 +978,3 @@ const kpiValues = {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

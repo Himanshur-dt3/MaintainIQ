@@ -96,31 +96,74 @@ export function recommendTechnicianDispatch(
 ): TechnicianRecommendation | null {
   if (!technicians || technicians.length === 0) return null;
 
-  // Score technicians based on open workload (fewer open tickets = higher score)
-  // and title relevance (e.g., job title matching issue type)
-  const scored = technicians.map((tech) => {
-    let score = 100 - tech._count.assignedTickets * 15;
-    const titleLower = (tech.jobTitle ?? "").toLowerCase();
-    const issueLower = issueType.toLowerCase();
+  /*
+   * Explainable Smart Dispatch scoring:
+   * - technician capacity is the strongest signal
+   * - higher-priority tickets increase the importance of capacity
+   * - job-title relevance is only used when supported by stored data
+   */
+  const priorityWeight =
+    priority === Priority.CRITICAL
+      ? 1.5
+      : priority === Priority.HIGH
+        ? 1.25
+        : priority === Priority.MEDIUM
+          ? 1
+          : 0.85;
 
-    if (titleLower.includes(issueLower) || issueLower.includes(titleLower)) {
-      score += 20;
+  const issueLower = issueType.toLowerCase().replaceAll("_", " ");
+
+  const scored = technicians.map((tech) => {
+    const openCount = Math.max(0, tech._count.assignedTickets);
+    const titleLower = (tech.jobTitle ?? "").toLowerCase();
+
+    const titleMatchesIssue =
+      titleLower.length > 0 &&
+      (titleLower.includes(issueLower) || issueLower.includes(titleLower));
+
+    const workloadPenalty = openCount * 12 * priorityWeight;
+
+    let score = 100 - workloadPenalty;
+
+    if (titleMatchesIssue) {
+      score += 15;
     }
+
+    score = Math.max(10, Math.min(99, score));
 
     return {
       technicianId: tech.id,
       technicianName: tech.name,
-      openCount: tech._count.assignedTickets,
+      openCount,
       jobTitle: tech.jobTitle,
-      score: Math.max(score, 10),
+      titleMatchesIssue,
+      score,
     };
   });
 
-  scored.sort((a, b) => b.score - a.score);
+  scored.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+
+    if (a.openCount !== b.openCount) {
+      return a.openCount - b.openCount;
+    }
+
+    return a.technicianName.localeCompare(b.technicianName);
+  });
+
   const best = scored[0];
 
-  let rationale = `Lowest active workload (${best.openCount} open tickets)`;
-  if (best.jobTitle) {
+  const priorityLabel = priority.toLowerCase();
+
+  let rationale =
+    `${best.openCount} open ticket${best.openCount === 1 ? "" : "s"} ` +
+    `and best available capacity for this ${priorityLabel}-priority request`;
+
+  if (best.titleMatchesIssue && best.jobTitle) {
+    rationale += ` · role matches ${issueLower}`;
+  } else if (best.jobTitle) {
     rationale += ` · ${best.jobTitle}`;
   }
 
@@ -128,7 +171,7 @@ export function recommendTechnicianDispatch(
     technicianId: best.technicianId,
     technicianName: best.technicianName,
     rationale,
-    matchScore: Math.min(Math.round(best.score), 99),
+    matchScore: Math.round(best.score),
   };
 }
 
