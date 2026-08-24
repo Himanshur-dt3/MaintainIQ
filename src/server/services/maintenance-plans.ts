@@ -161,6 +161,105 @@ export async function listMaintenancePlans(
   });
 }
 
+export async function listMaintenancePlansForTechnician(
+  actor: TicketActor,
+) {
+  if (actor.role !== "TECHNICIAN") {
+    throw new AuthorizationError(
+      "Only technicians may access their maintenance plans.",
+    );
+  }
+
+  return prisma.maintenancePlan.findMany({
+    where: {
+      technicianId: actor.id,
+    },
+    include: {
+      asset: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          location: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        nextDueAt: "asc",
+      },
+      {
+        priority: "desc",
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
+  });
+}
+async function getTechnicianMaintenancePlan(
+  actor: TicketActor,
+  planId: string,
+) {
+  if (actor.role !== "TECHNICIAN") {
+    throw new AuthorizationError(
+      "Only technicians may manage assigned maintenance plans.",
+    );
+  }
+
+  const plan = await prisma.maintenancePlan.findFirst({
+    where: {
+      id: planId,
+      technicianId: actor.id,
+    },
+  });
+
+  if (!plan) {
+    throw new MaintenancePlanNotFoundError(
+      "Maintenance plan was not found or is not assigned to you.",
+    );
+  }
+
+  return plan;
+}
+
+export async function completeMaintenancePlanForTechnician(
+  actor: TicketActor,
+  planId: string,
+) {
+  const existing = await getTechnicianMaintenancePlan(actor, planId);
+
+  if (existing.status !== MaintenancePlanStatus.ACTIVE) {
+    throw new Error(
+      "Only active maintenance plans can be completed.",
+    );
+  }
+
+  const completedAt = new Date();
+  const nextDueAt = calculateNextDueDate(
+    completedAt,
+    existing.frequency,
+  );
+
+  if (nextDueAt) {
+    return prisma.maintenancePlan.update({
+      where: { id: planId },
+      data: {
+        lastCompletedAt: completedAt,
+        nextDueAt,
+        status: MaintenancePlanStatus.ACTIVE,
+      },
+    });
+  }
+
+  return prisma.maintenancePlan.update({
+    where: { id: planId },
+    data: {
+      lastCompletedAt: completedAt,
+      status: MaintenancePlanStatus.COMPLETED,
+    },
+  });
+}
 export async function getMaintenancePlan(
   actor: TicketActor,
   planId: string,

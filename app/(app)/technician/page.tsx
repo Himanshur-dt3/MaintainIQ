@@ -1,6 +1,7 @@
 import { TechnicianTicketWorkspace } from "@/src/components/technician-ticket-workspace";
 import { requireRole } from "@/src/server/auth/guards";
 import { listTicketsForActor } from "@/src/server/services/tickets";
+import { listMaintenancePlansForTechnician } from "@/src/server/services/maintenance-plans";
 
 /**
  * Renders the protected technician workspace with server-scoped assigned work.
@@ -9,10 +10,15 @@ import { listTicketsForActor } from "@/src/server/services/tickets";
  */
 export default async function TechnicianPage() {
   const session = await requireRole("TECHNICIAN");
-  const tickets = await listTicketsForActor({
+  const actor = {
     id: session.user.id,
     role: session.user.role,
-  });
+  };
+
+  const [tickets, maintenancePlans] = await Promise.all([
+    listTicketsForActor(actor),
+    listMaintenancePlansForTechnician(actor),
+  ]);
 
   return (
     <div className="space-y-10 font-sans text-slate-100">
@@ -31,7 +37,10 @@ export default async function TechnicianPage() {
         </div>
       </section>
 
-      <TechnicianTicketWorkspace tickets={tickets} />
+      <TechnicianTicketWorkspace
+        tickets={tickets}
+        maintenancePlans={maintenancePlans}
+      />
     </div>
   );
 }

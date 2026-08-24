@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { IssueType, Priority, TicketStatus } from "@prisma/client";
 import { useState } from "react";
@@ -33,8 +33,27 @@ type ActionState = {
   message: string;
 } | null;
 
+type TechnicianMaintenancePlan = {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  frequency: string;
+  status: string;
+  priority: Priority;
+  nextDueAt: Date | string;
+  lastCompletedAt: Date | string | null;
+  asset: {
+    id: string;
+    name: string;
+    type: string;
+    location: string;
+  };
+};
+
 type TechnicianTicketWorkspaceProps = {
   tickets: TechnicianTicket[];
+  maintenancePlans: TechnicianMaintenancePlan[];
 };
 
 async function getActionError(response: Response): Promise<string | null> {
@@ -54,6 +73,7 @@ async function getActionError(response: Response): Promise<string | null> {
  */
 export function TechnicianTicketWorkspace({
   tickets,
+  maintenancePlans,
 }: TechnicianTicketWorkspaceProps) {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(
     tickets[0]?.id ?? null,
@@ -171,7 +191,8 @@ export function TechnicianTicketWorkspace({
   }
 
   return (
-    <section aria-labelledby="technician-workload-title" className="space-y-6">
+    <>
+      <section aria-labelledby="technician-workload-title" className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
@@ -498,11 +519,165 @@ export function TechnicianTicketWorkspace({
         ) : null}
       </div>
     </section>
+
+    <section
+      aria-labelledby="technician-maintenance-plans-title"
+      className="mt-10 space-y-5"
+    >
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-widest text-indigo-400">
+            Preventive Maintenance
+          </span>
+          <h2
+            id="technician-maintenance-plans-title"
+            className="mt-1 font-display text-2xl font-bold text-white"
+          >
+            Your Maintenance Plans
+          </h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Review the maintenance activities assigned to your assets.
+          </p>
+        </div>
+
+        <span className="rounded-xl border border-slate-800 bg-slate-900/60 px-3.5 py-1.5 text-xs font-bold text-slate-400">
+          {maintenancePlans.length}{" "}
+          {maintenancePlans.length === 1 ? "plan" : "plans"} assigned
+        </span>
+      </div>
+
+      {maintenancePlans.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-12 text-center">
+          <h3 className="font-display text-lg font-bold text-white">
+            No Maintenance Plans Assigned
+          </h3>
+          <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-slate-500">
+            Maintenance plans assigned to you by an administrator will appear
+            here.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {maintenancePlans.map((plan) => {
+            const isOverdue =
+              plan.status === "ACTIVE" &&
+              new Date(plan.nextDueAt).getTime() < Date.now();
+
+            const displayStatus = isOverdue ? "OVERDUE" : plan.status;
+
+            const statusClass =
+              displayStatus === "OVERDUE"
+                ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                : displayStatus === "CANCELLED"
+                  ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                  : displayStatus === "PAUSED"
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+
+            const nextDue = new Date(plan.nextDueAt).toLocaleDateString(
+              "en-US",
+              {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              },
+            );
+
+            const formatEnum = (value: string) =>
+              value
+                .replaceAll("_", " ")
+                .toLowerCase()
+                .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+            return (
+              <article
+                key={plan.id}
+                className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl backdrop-blur-xl"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Maintenance Plan
+                    </span>
+
+                    <h3 className="mt-1 font-display text-base font-bold text-white">
+                      {plan.title}
+                    </h3>
+
+                    <p className="mt-2 text-xs text-slate-400">
+                      <span className="font-semibold text-slate-200">
+                        {plan.asset.name}
+                      </span>
+                      {" · "}
+                      {plan.asset.location}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`shrink-0 rounded-lg border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider ${statusClass}`}
+                  >
+                    {displayStatus}
+                  </span>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                      Type
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-slate-300">
+                      {formatEnum(plan.type)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                      Frequency
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-slate-300">
+                      {formatEnum(plan.frequency)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                      Priority
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-slate-300">
+                      {formatEnum(plan.priority)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                      Next Due
+                    </p>
+                    <p
+                      className={`mt-1 text-xs font-semibold ${
+                        isOverdue ? "text-rose-300" : "text-slate-300"
+                      }`}
+                    >
+                      {nextDue}
+                    </p>
+                  </div>
+                </div>
+
+                {plan.description ? (
+                  <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/30 p-3">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-600">
+                      Description
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                      {plan.description}
+                    </p>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      )}
+      </section>
+    </>
   );
 }
-
-
-
-
-
-
