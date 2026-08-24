@@ -1,3 +1,4 @@
+import { MaintenancePlanActions } from "./maintenance-plan-actions";
 import Link from "next/link";
 
 import { requireUser } from "@/src/server/auth/guards";
@@ -211,6 +212,11 @@ export default async function MaintenancePlanDetailPage({
             </div>
           </div>
         </div>
+
+        <MaintenancePlanActions
+          planId={plan.id}
+          status={plan.status}
+        />
 
         <footer className="border-t border-[#303438] bg-[#151819] px-6 py-4">
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-[10px] text-[#666b66]">
