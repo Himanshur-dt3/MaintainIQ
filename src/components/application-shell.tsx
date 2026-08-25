@@ -25,15 +25,15 @@ const roleNavigation: Record<
     { href: "/admin/maintenance-plans", label: "Maintenance Plans", icon: "M" },
     { href: "/admin/assets", label: "Assets", icon: "A" },
     { href: "/admin/past-tickets", label: "Past Tickets", icon: "T" },
-    { href: "/admin/reviews", label: "Reviews", icon: "â˜…" },
+    { href: "/admin/reviews", label: "Reviews", icon: "★" },
   ],
   TECHNICIAN: [
     { href: "/technician", label: "My Workload", icon: "W" },
-    { href: "/technician/reviews", label: "Reviews", icon: "â˜…" },
+    { href: "/technician/reviews", label: "Reviews", icon: "★" },
   ],
   REPORTER: [
     { href: "/reporter", label: "Report Issue", icon: "R" },
-    { href: "/reporter/reviews", label: "Reviews", icon: "â˜…" },
+    { href: "/reporter/reviews", label: "Reviews", icon: "★" },
   ],
 };
 
@@ -160,7 +160,7 @@ export function ApplicationShell({ user, children }: ApplicationShellProps) {
           {/* Search */}
           <div className="hidden w-full max-w-md md:flex">
             <div className="flex h-10 w-full items-center rounded-md border border-[#35393c] bg-[#1d2022] px-3 text-sm text-[#858a85] transition focus-within:border-[#5e635f]">
-              <span className="mr-2 text-base text-[#858a85]">âŒ•</span>
+              <span className="mr-2 text-base text-[#858a85]">⌕</span>
               <span>Search...</span>
             </div>
           </div>

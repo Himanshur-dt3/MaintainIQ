@@ -173,11 +173,11 @@ export function recommendTechnicianDispatch(
     `${priorityLabel}-priority request`;
 
   if (best.titleMatchesIssue && best.jobTitle) {
-    rationale += ` Ãƒâ€šÂ· role matches ${issueLower}`;
+    rationale += ` · role matches ${issueLower}`;
   } else if (best.jobTitle) {
-    rationale += ` Ãƒâ€šÂ· ${best.jobTitle}`;
+    rationale += ` · ${best.jobTitle}`;
   } else {
-    rationale += " Ãƒâ€šÂ· no specialization metadata available";
+    rationale += " · no specialization metadata available";
   }
 
   return {

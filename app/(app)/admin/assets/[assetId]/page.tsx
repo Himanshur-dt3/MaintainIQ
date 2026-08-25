@@ -57,8 +57,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
           <Link
             href="/admin/assets"
             className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#737873] transition hover:text-[#d1d3ce]"
-          >
-            Ã¢â€ Â Back to Assets
+          >← Back to Assets
           </Link>
 
           <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
