@@ -76,7 +76,7 @@ export default async function AdminTicketDetailPage({
             href="/admin/tickets?scope=all"
             className="text-xs font-semibold text-[#8f958f] transition hover:text-[#e2e3de]"
           >
-            ← Back to Tickets
+            Ã¢â€ Â Back to Tickets
           </Link>
 
           <p className="mt-5 font-mono text-[10px] uppercase tracking-widest text-[#656a65]">
@@ -88,7 +88,7 @@ export default async function AdminTicketDetailPage({
           </h1>
 
           <p className="mt-1 text-sm text-[#858a85]">
-            {ticket.asset.name} · {ticket.location}
+            {ticket.asset.name} Ã‚Â· {ticket.location}
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default async function AdminTicketDetailPage({
             Asset Health
           </p>
           <p className="mt-2 text-sm font-bold text-[#e1e2dd]">
-            {assetHealth.healthScore}% · {label(assetHealth.riskLevel)}
+            {assetHealth.healthScore}% Ã‚Â· {label(assetHealth.riskLevel)}
           </p>
           <p className="mt-1 text-[10px] text-[#747974]">
             {assetTicketCount} related ticket{assetTicketCount === 1 ? "" : "s"}
@@ -287,6 +287,26 @@ export default async function AdminTicketDetailPage({
                 </span>
                 <span className="text-sm font-bold text-[#dfe0db]">
                   {label(assetHealth.riskLevel)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-[#2d3033] pb-3">
+                <span className="text-[10px] uppercase tracking-wider text-[#666b66]">
+                  Failure Risk
+                </span>
+                <span className="text-sm font-bold text-amber-200">
+                  {assetHealth.failureRiskPercent}%
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-[#2d3033] pb-3">
+                <span className="text-[10px] uppercase tracking-wider text-[#666b66]">
+                  Predicted Failure
+                </span>
+                <span className="text-sm font-bold text-[#dfe0db]">
+                  {assetHealth.predictedFailureWindowDays !== null
+                    ? `~${assetHealth.predictedFailureWindowDays} days`
+                    : "No near-term prediction"}
                 </span>
               </div>
 
