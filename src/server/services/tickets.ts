@@ -1,4 +1,4 @@
-import {
+﻿import {
   AssetStatus,
   Prisma,
   Role,
@@ -13,6 +13,7 @@ import {
   assertTicketAccess,
 } from "@/src/server/auth/guards";
 import prisma from "@/src/server/db/prisma";
+import { calculateSlaDeadline } from "@/src/server/services/sla";
 import { triageTicketWithClaude } from "@/src/server/services/claude";
 import type {
   AddWorkNoteInput,
@@ -53,6 +54,9 @@ const ticketAccessSelection = {
   reporterId: true,
   technicianId: true,
   status: true,
+  slaDeadline: true,
+  firstResponseAt: true,
+  resolvedAt: true,
 } as const;
 
 type TicketAccessSnapshot = Prisma.TicketGetPayload<{
@@ -232,9 +236,11 @@ export async function createTicketFromTriage(
   const analysis = await triageTicketWithClaude(intake, assetCatalog);
 
   return prisma.$transaction(async (tx) => {
+    const createdAt = new Date();
     const asset = await resolveAssetForTriage(tx, intake, analysis);
     const ticket = await tx.ticket.create({
       data: {
+        slaDeadline: calculateSlaDeadline(createdAt, analysis.priority),
         title: intake.title,
         description: intake.description,
         location: intake.location,
@@ -243,6 +249,7 @@ export async function createTicketFromTriage(
         assetId: asset.id,
         reporterId: actor.id,
         status: TicketStatus.REPORTED,
+        createdAt,
       },
     });
 
@@ -500,6 +507,7 @@ export async function assignTicket(
       data: {
         technicianId: technician.id,
         status: TicketStatus.ASSIGNED,
+        firstResponseAt: ticket.firstResponseAt ?? new Date(),
       },
     });
 
@@ -510,7 +518,7 @@ export async function assignTicket(
       "TICKET_ASSIGNED",
       ticket.technicianId,
       technician.id,
-      `Assigned technician; status ${ticket.status} → ${TicketStatus.ASSIGNED}.`,
+      `Assigned technician; status ${ticket.status} â†’ ${TicketStatus.ASSIGNED}.`,
     );
 
     return updatedTicket;
@@ -619,6 +627,7 @@ export async function resolveTicket(
       data: {
         status: TicketStatus.RESOLVED,
         resolutionNotes: input.resolutionNotes,
+        resolvedAt: new Date(),
       },
     });
 

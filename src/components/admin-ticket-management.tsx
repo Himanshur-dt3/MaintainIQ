@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import type { IssueType, Priority, TicketStatus } from "@prisma/client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import type { AssetMaintenanceInsight } from "@/src/server/services/maintenance-intelligence";
 import {
   TicketPriorityBadge,
   TicketStatusBadge,
@@ -30,6 +31,9 @@ type AdminTicket = {
   issueType: IssueType;
   priority: Priority;
   status: TicketStatus;
+  slaDeadline: Date | null;
+  firstResponseAt: Date | null;
+  resolvedAt: Date | null;
   updatedAt: Date;
   asset: {
     id: string;
@@ -65,7 +69,44 @@ type AdminTicket = {
   }>;
 };
 
+
+function getTicketSlaStatus(ticket: AdminTicket, now = new Date()) {
+  if (!ticket.slaDeadline) {
+    return { label: "No SLA", className: "text-slate-400 border-slate-700 bg-slate-800/50" };
+  }
+
+  if (ticket.status === "RESOLVED") {
+    if (!ticket.resolvedAt) {
+      return { label: "Resolved — time unavailable", className: "text-slate-400 border-slate-700 bg-slate-800/50" };
+    }
+
+    return ticket.resolvedAt.getTime() <= ticket.slaDeadline.getTime()
+      ? { label: "Resolved within SLA", className: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" }
+      : { label: "Resolved late", className: "text-red-400 border-red-500/30 bg-red-500/10" };
+  }
+
+  const remainingMs = ticket.slaDeadline.getTime() - now.getTime();
+
+  if (remainingMs <= 0) {
+    return { label: "SLA breached", className: "text-red-400 border-red-500/30 bg-red-500/10" };
+  }
+
+  const targetHours = {
+    CRITICAL: 4,
+    HIGH: 8,
+    MEDIUM: 24,
+    LOW: 72,
+  }[ticket.priority];
+
+  const atRiskWindowMs = targetHours * 60 * 60 * 1000 * 0.25;
+
+  return remainingMs <= atRiskWindowMs
+    ? { label: "SLA at risk", className: "text-amber-400 border-amber-500/30 bg-amber-500/10" }
+    : { label: "SLA on track", className: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" };
+}
+
 type AdminTicketManagementProps = {
+  maintenanceInsights: AssetMaintenanceInsight[];
   tickets: AdminTicket[];
   technicians: Technician[];
   issueTypes: IssueType[];
@@ -112,6 +153,7 @@ export function AdminTicketManagement({
   issueTypes,
   priorities,
   statuses,
+  maintenanceInsights,
 }: AdminTicketManagementProps) {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
@@ -359,7 +401,9 @@ export function AdminTicketManagement({
               MODERATE: "text-amber-400 border-amber-500/30 bg-amber-500/10",
               HIGH_RISK: "text-rose-400 border-rose-500/30 bg-rose-500/10",
             };
-            const healthIcons = { HEALTHY: "OK", MODERATE: "! ", HIGH_RISK: "!!" };
+            const healthIcons = { HEALTHY: "OK", MODERATE: "!Â ", HIGH_RISK: "!!" };
+
+            const sla = getTicketSlaStatus(ticket);
 
             return (
               <article
@@ -387,6 +431,12 @@ export function AdminTicketManagement({
                   <div className="flex flex-wrap items-center gap-2">
                     <TicketPriorityBadge priority={ticket.priority} />
                     <TicketStatusBadge status={ticket.status} />
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${sla.className}`}
+                      title="SLA status"
+                    >
+                      {sla.label}
+                    </span>
                     {/* Asset Health Badge */}
                     <span
                       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${healthColors[health.riskLevel]}`}
@@ -403,7 +453,7 @@ export function AdminTicketManagement({
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/10 p-3 text-xs backdrop-blur-md">
                     <div>
                       <p className="font-bold text-[10px] uppercase tracking-wider text-violet-400">
-                        ✦ AI Smart Dispatch Recommendation
+                        âœ¦ AI Smart Dispatch Recommendation
                       </p>
                       <p className="mt-0.5 font-semibold text-slate-200">
                         {dispatchRec.technicianName}

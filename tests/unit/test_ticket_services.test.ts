@@ -1,4 +1,4 @@
-import { AssetStatus, IssueType, Priority, Role, TicketStatus } from "@prisma/client";
+﻿import { AssetStatus, IssueType, Priority, Role, TicketStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMock = vi.hoisted(() => ({
@@ -340,6 +340,7 @@ describe("ticket persistence and workflow services", () => {
         status: TicketStatus.RESOLVED,
         resolutionNotes:
           "Cleared the condensate drain and confirmed normal operation.",
+        resolvedAt: expect.any(Date),
       },
     });
     expect(prismaMock.ticketHistory.create).toHaveBeenCalledWith({

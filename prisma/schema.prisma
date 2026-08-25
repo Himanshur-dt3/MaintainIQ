@@ -109,6 +109,12 @@ model Ticket {
   reporterId      String
   technicianId    String?
   resolutionNotes String?
+
+  // SLA tracking
+  slaDeadline    DateTime?
+  firstResponseAt DateTime?
+  resolvedAt      DateTime?
+
   asset           Asset           @relation(fields: [assetId], references: [id], onDelete: Restrict)
   reporter        User            @relation("ReportedTickets", fields: [reporterId], references: [id], onDelete: Restrict)
   technician      User?           @relation("AssignedTickets", fields: [technicianId], references: [id], onDelete: SetNull)
