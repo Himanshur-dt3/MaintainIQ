@@ -10,6 +10,13 @@ export default auth((request) => {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  if (pathname.startsWith("/api/") && !isAuthenticated) {
+    return NextResponse.json(
+      { error: "Authentication is required." },
+      { status: 401 },
+    );
+  }
+
   if (pathname !== "/" && pathname !== "/login" && !isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);

@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+import { AuthorizationError } from "@/src/server/auth/guards";
+
 import { getAssetMaintenanceInsights } from "@/src/server/services/maintenance-intelligence";
 import {
   listAdminTickets,
@@ -327,7 +329,7 @@ export async function askMaintenanceCopilot(
   question: string,
 ): Promise<MaintenanceCopilotResult> {
   if (actor.role !== "ADMIN") {
-    throw new Error(
+    throw new AuthorizationError(
       "Maintenance Copilot is available to administrators only.",
     );
   }

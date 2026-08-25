@@ -1,4 +1,4 @@
-﻿import {
+import {
   AssetCriticality,
   AssetStatus,
 } from "@prisma/client";
@@ -23,6 +23,8 @@ function requireAdmin(actor: TicketActor) {
 }
 
 export class AssetNotFoundError extends Error {
+  readonly statusCode = 404;
+
   constructor(message = "Asset not found.") {
     super(message);
     this.name = "AssetNotFoundError";
@@ -30,6 +32,8 @@ export class AssetNotFoundError extends Error {
 }
 
 export class AssetNameConflictError extends Error {
+  readonly statusCode = 409;
+
   constructor(message = "An asset with this name already exists.") {
     super(message);
     this.name = "AssetNameConflictError";
