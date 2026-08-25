@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { IssueType, Priority, TicketStatus } from "@prisma/client";
 
 import { AdminTicketManagement } from "@/src/components/admin-ticket-management";
@@ -644,7 +644,6 @@ const kpiValues = {
           issueTypes={Object.values(IssueType)}
           priorities={Object.values(Priority)}
           statuses={Object.values(TicketStatus)}
-          maintenanceInsights={maintenanceInsights}
         />
       </section>
 

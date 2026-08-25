@@ -1,10 +1,9 @@
-﻿"use client";
+"use client";
 
 import type { IssueType, Priority, TicketStatus } from "@prisma/client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import type { AssetMaintenanceInsight } from "@/src/server/services/maintenance-intelligence";
 import {
   TicketPriorityBadge,
   TicketStatusBadge,
@@ -106,7 +105,6 @@ function getTicketSlaStatus(ticket: AdminTicket, now = new Date()) {
 }
 
 type AdminTicketManagementProps = {
-  maintenanceInsights: AssetMaintenanceInsight[];
   tickets: AdminTicket[];
   technicians: Technician[];
   issueTypes: IssueType[];
@@ -153,7 +151,6 @@ export function AdminTicketManagement({
   issueTypes,
   priorities,
   statuses,
-  maintenanceInsights,
 }: AdminTicketManagementProps) {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
