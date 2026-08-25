@@ -96,24 +96,27 @@ export function recommendTechnicianDispatch(
     _count: { assignedTickets: number };
   }>,
 ): TechnicianRecommendation | null {
-  if (!technicians || technicians.length === 0) return null;
+  if (!technicians || technicians.length === 0) {
+    return null;
+  }
 
-  /*
-   * Explainable Smart Dispatch scoring:
-   * - technician capacity is the strongest signal
-   * - higher-priority tickets increase the importance of capacity
-   * - job-title relevance is only used when supported by stored data
-   */
   const priorityWeight =
     priority === Priority.CRITICAL
-      ? 1.5
+      ? 1.15
       : priority === Priority.HIGH
-        ? 1.25
+        ? 1.08
         : priority === Priority.MEDIUM
           ? 1
-          : 0.85;
+          : 0.95;
 
   const issueLower = issueType.toLowerCase().replaceAll("_", " ");
+
+  const maxOpenTickets = Math.max(
+    1,
+    ...technicians.map((tech) =>
+      Math.max(0, tech._count.assignedTickets),
+    ),
+  );
 
   const scored = technicians.map((tech) => {
     const openCount = Math.max(0, tech._count.assignedTickets);
@@ -121,15 +124,19 @@ export function recommendTechnicianDispatch(
 
     const titleMatchesIssue =
       titleLower.length > 0 &&
-      (titleLower.includes(issueLower) || issueLower.includes(titleLower));
+      (titleLower.includes(issueLower) ||
+        issueLower.includes(titleLower));
 
-    const workloadPenalty = openCount * 12 * priorityWeight;
+    const capacityScore =
+      100 - (openCount / maxOpenTickets) * 100;
 
-    let score = 100 - workloadPenalty;
+    const specializationScore = titleMatchesIssue ? 100 : 50;
 
-    if (titleMatchesIssue) {
-      score += 15;
-    }
+    let score =
+      capacityScore * 0.7 +
+      specializationScore * 0.3;
+
+    score *= priorityWeight;
 
     score = Math.max(10, Math.min(99, score));
 
@@ -160,13 +167,17 @@ export function recommendTechnicianDispatch(
   const priorityLabel = priority.toLowerCase();
 
   let rationale =
-    `${best.openCount} open ticket${best.openCount === 1 ? "" : "s"} ` +
-    `and best available capacity for this ${priorityLabel}-priority request`;
+    `${best.openCount} open ticket${
+      best.openCount === 1 ? "" : "s"
+    } and strongest available capacity for this ` +
+    `${priorityLabel}-priority request`;
 
   if (best.titleMatchesIssue && best.jobTitle) {
-    rationale += ` Â· role matches ${issueLower}`;
+    rationale += ` · role matches ${issueLower}`;
   } else if (best.jobTitle) {
-    rationale += ` Â· ${best.jobTitle}`;
+    rationale += ` · ${best.jobTitle}`;
+  } else {
+    rationale += " · no specialization metadata available";
   }
 
   return {
@@ -176,7 +187,6 @@ export function recommendTechnicianDispatch(
     matchScore: Math.round(best.score),
   };
 }
-
 /**
  * Calculates Asset Health Index & risk level based on historical ticket volume.
  *

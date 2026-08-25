@@ -54,7 +54,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
             href="/admin/assets"
             className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#737873] transition hover:text-[#d1d3ce]"
           >
-            â† Back to Assets
+            ← Back to Assets
           </Link>
 
           <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
@@ -66,7 +66,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
           </h1>
 
           <p className="mt-2 text-xs text-[#747974]">
-            {asset.type} Â· {asset.location}
+            {asset.type} - {asset.location}
           </p>
         </div>
 
@@ -242,7 +242,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
                         {ticket.title}
                       </p>
                       <p className="mt-1 text-[10px] text-[#686d68]">
-                        {formatEnum(ticket.priority)} Â·{" "}
+                        {formatEnum(ticket.priority)} -{" "}
                         {formatEnum(ticket.status)}
                       </p>
                     </div>
@@ -282,7 +282,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
                         {plan.title}
                       </p>
                       <p className="mt-1 text-[10px] text-[#686d68]">
-                        {formatEnum(plan.priority)} Â·{" "}
+                        {formatEnum(plan.priority)} -{" "}
                         {formatEnum(plan.status)}
                       </p>
                     </div>

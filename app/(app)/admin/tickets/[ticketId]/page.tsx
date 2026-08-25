@@ -76,7 +76,7 @@ export default async function AdminTicketDetailPage({
             href="/admin/tickets?scope=all"
             className="text-xs font-semibold text-[#8f958f] transition hover:text-[#e2e3de]"
           >
-            Ã¢â€ Â Back to Tickets
+            ← Back to Tickets
           </Link>
 
           <p className="mt-5 font-mono text-[10px] uppercase tracking-widest text-[#656a65]">
@@ -88,7 +88,7 @@ export default async function AdminTicketDetailPage({
           </h1>
 
           <p className="mt-1 text-sm text-[#858a85]">
-            {ticket.asset.name} Ã‚Â· {ticket.location}
+            {ticket.asset.name} - {ticket.location}
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default async function AdminTicketDetailPage({
             Asset Health
           </p>
           <p className="mt-2 text-sm font-bold text-[#e1e2dd]">
-            {assetHealth.healthScore}% Ã‚Â· {label(assetHealth.riskLevel)}
+            {assetHealth.healthScore}% - {label(assetHealth.riskLevel)}
           </p>
           <p className="mt-1 text-[10px] text-[#747974]">
             {assetTicketCount} related ticket{assetTicketCount === 1 ? "" : "s"}

@@ -1,4 +1,4 @@
-﻿import {
+import {
   AssetStatus,
   AssetCriticality,
   Prisma,
@@ -520,7 +520,7 @@ export async function assignTicket(
       "TICKET_ASSIGNED",
       ticket.technicianId,
       technician.id,
-      `Assigned technician; status ${ticket.status} â†’ ${TicketStatus.ASSIGNED}.`,
+      `Assigned technician; status ${ticket.status} ←’ ${TicketStatus.ASSIGNED}.`,
     );
 
     return updatedTicket;

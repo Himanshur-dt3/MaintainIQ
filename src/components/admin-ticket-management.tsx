@@ -76,7 +76,7 @@ function getTicketSlaStatus(ticket: AdminTicket, now = new Date()) {
 
   if (ticket.status === "RESOLVED") {
     if (!ticket.resolvedAt) {
-      return { label: "Resolved — time unavailable", className: "text-slate-400 border-slate-700 bg-slate-800/50" };
+      return { label: "Resolved - time unavailable", className: "text-slate-400 border-slate-700 bg-slate-800/50" };
     }
 
     return ticket.resolvedAt.getTime() <= ticket.slaDeadline.getTime()
@@ -398,7 +398,7 @@ export function AdminTicketManagement({
               MODERATE: "text-amber-400 border-amber-500/30 bg-amber-500/10",
               HIGH_RISK: "text-rose-400 border-rose-500/30 bg-rose-500/10",
             };
-            const healthIcons = { HEALTHY: "OK", MODERATE: "!Â ", HIGH_RISK: "!!" };
+            const healthIcons = { HEALTHY: "OK", MODERATE: "!", HIGH_RISK: "!!" };
 
             const sla = getTicketSlaStatus(ticket);
 
@@ -450,7 +450,7 @@ export function AdminTicketManagement({
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/10 p-3 text-xs backdrop-blur-md">
                     <div>
                       <p className="font-bold text-[10px] uppercase tracking-wider text-violet-400">
-                        âœ¦ AI Smart Dispatch Recommendation
+                        AI Smart Dispatch Recommendation
                       </p>
                       <p className="mt-0.5 font-semibold text-slate-200">
                         {dispatchRec.technicianName}

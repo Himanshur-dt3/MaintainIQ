@@ -292,7 +292,7 @@ const kpiValues = {
                       </h3>
 
                       <p className="mt-1 text-[10px] text-[#707570]">
-                        {insight.assetType} Ãƒâ€šÃ‚Â· {insight.location}
+                        {insight.assetType} - {insight.location}
                       </p>
                     </div>
 
@@ -549,7 +549,7 @@ const kpiValues = {
                         : null,
                   ]
                     .filter(Boolean)
-                    .join(" Ãƒâ€šÃ‚Â· ") ||
+                    .join(" - ") ||
                   "Maintenance activity warrants routine monitoring.";
 
               const riskClass =
@@ -986,21 +986,21 @@ const kpiValues = {
                   <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
                     <p className="text-[9px] uppercase tracking-wider text-[#666b66]">Avg. Resolution</p>
                     <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
-                      {resolutionHours === null ? "—" : `${resolutionHours.toFixed(1)}h`}
+                      {resolutionHours === null ? "-" : `${resolutionHours.toFixed(1)}h`}
                     </p>
                   </div>
 
                   <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
                     <p className="text-[9px] uppercase tracking-wider text-[#666b66]">First Response</p>
                     <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
-                      {responseRate === null ? "—" : `${Math.round(responseRate * 100)}%`}
+                      {responseRate === null ? "-" : `${Math.round(responseRate * 100)}%`}
                     </p>
                   </div>
 
                   <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
                     <p className="text-[9px] uppercase tracking-wider text-[#666b66]">SLA Compliance</p>
                     <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
-                      {slaRate === null ? "—" : `${Math.round(slaRate * 100)}%`}
+                      {slaRate === null ? "-" : `${Math.round(slaRate * 100)}%`}
                     </p>
                   </div>
                 </div>
