@@ -58,7 +58,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
             href="/admin/assets"
             className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#737873] transition hover:text-[#d1d3ce]"
           >
-            ← Back to Assets
+            Ã¢â€ Â Back to Assets
           </Link>
 
           <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
@@ -314,6 +314,7 @@ export default async function AssetPage({ params }: AssetPageProps) {
           </p>
         </div>
       </section>
+
 
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-[#303438] bg-[#181b1d]">
