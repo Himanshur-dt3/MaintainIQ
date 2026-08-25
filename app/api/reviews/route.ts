@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 import { requireRole } from "@/src/server/auth/guards";
+import { toApiErrorResponse } from "@/src/server/http/api-errors";
 import {
   createReporterReview,
   listReporterReviews,
@@ -20,10 +21,7 @@ export async function GET() {
 
     return NextResponse.json({ reviews });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to load reviews.";
-
-    return NextResponse.json({ error: message }, { status: 403 });
+    return toApiErrorResponse(error);
   }
 }
 
@@ -41,9 +39,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ review }, { status: 201 });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to create review.";
-
-    return NextResponse.json({ error: message }, { status: 400 });
+    return toApiErrorResponse(error);
   }
 }
