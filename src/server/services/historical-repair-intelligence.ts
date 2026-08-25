@@ -153,3 +153,105 @@ export async function findHistoricalRepairMatches(
     })
     .slice(0, 5);
 }
+export type AssetHistoricalRepairInsight = {
+  totalResolvedRepairs: number;
+  recurringIssueType: IssueType | null;
+  recurringIssueCount: number;
+  recurrenceRate: number;
+  latestResolvedAt: Date | null;
+  commonResolutions: string[];
+  riskLevel: "LOW" | "MEDIUM" | "HIGH";
+  recommendation: string;
+};
+
+export async function getAssetHistoricalRepairInsight(
+  assetId: string,
+): Promise<AssetHistoricalRepairInsight> {
+  const resolvedTickets = await prisma.ticket.findMany({
+    where: {
+      assetId,
+      status: TicketStatus.RESOLVED,
+      resolutionNotes: {
+        not: null,
+      },
+    },
+    select: {
+      issueType: true,
+      resolutionNotes: true,
+      resolvedAt: true,
+    },
+    orderBy: {
+      resolvedAt: "desc",
+    },
+  });
+
+  const repairs = resolvedTickets.filter(
+    (ticket) => ticket.resolutionNotes?.trim(),
+  );
+
+  if (repairs.length === 0) {
+    return {
+      totalResolvedRepairs: 0,
+      recurringIssueType: null,
+      recurringIssueCount: 0,
+      recurrenceRate: 0,
+      latestResolvedAt: null,
+      commonResolutions: [],
+      riskLevel: "LOW",
+      recommendation:
+        "Insufficient historical repair data. Continue monitoring this asset and maintain its scheduled preventive maintenance.",
+    };
+  }
+
+  const issueCounts = new Map<IssueType, number>();
+
+  for (const repair of repairs) {
+    issueCounts.set(
+      repair.issueType,
+      (issueCounts.get(repair.issueType) ?? 0) + 1,
+    );
+  }
+
+  const recurringIssue = [...issueCounts.entries()].sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+
+  const recurringIssueCount = recurringIssue?.[1] ?? 0;
+  const recurrenceRate =
+    repairs.length > 0
+      ? Math.round((recurringIssueCount / repairs.length) * 100)
+      : 0;
+
+  const riskLevel =
+    repairs.length >= 5 || recurringIssueCount >= 4
+      ? "HIGH"
+      : repairs.length >= 3 || recurringIssueCount >= 2
+        ? "MEDIUM"
+        : "LOW";
+
+  let recommendation =
+    "Continue routine preventive maintenance and monitor future repairs.";
+
+  if (riskLevel === "MEDIUM") {
+    recommendation =
+      "Recurring repair activity detected. Review preventive maintenance frequency and inspect the affected subsystem.";
+  }
+
+  if (riskLevel === "HIGH") {
+    recommendation =
+      "High recurring repair activity detected. Prioritize a root-cause inspection and evaluate whether overhaul or replacement is warranted.";
+  }
+
+  return {
+    totalResolvedRepairs: repairs.length,
+    recurringIssueType: recurringIssue?.[0] ?? null,
+    recurringIssueCount,
+    recurrenceRate,
+    latestResolvedAt: repairs[0]?.resolvedAt ?? null,
+    commonResolutions: repairs
+      .slice(0, 3)
+      .map((repair) => repair.resolutionNotes!.trim()),
+    riskLevel,
+    recommendation,
+  };
+}
