@@ -1,16 +1,27 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 import prisma from "@/src/server/db/prisma";
 import { requireUser } from "@/src/server/auth/guards";
 
 import MaintenancePlanForm from "./maintenance-plan-form";
 
-export default async function NewMaintenancePlanPage() {
+type NewMaintenancePlanPageProps = {
+  searchParams: Promise<{
+    assetId?: string;
+  }>;
+};
+
+export default async function NewMaintenancePlanPage({
+  searchParams,
+}: NewMaintenancePlanPageProps) {
   const session = await requireUser();
 
   if (session.user.role !== "ADMIN") {
     return null;
   }
+
+  const params = await searchParams;
+  const requestedAssetId = params.assetId ?? "";
 
   const [assets, technicians] = await Promise.all([
     prisma.asset.findMany({
@@ -42,6 +53,12 @@ export default async function NewMaintenancePlanPage() {
       },
     }),
   ]);
+
+  const initialAssetId = assets.some(
+    (asset) => asset.id === requestedAssetId,
+  )
+    ? requestedAssetId
+    : "";
 
   return (
     <main className="mx-auto w-full max-w-[1100px] px-6 py-8">
@@ -80,6 +97,7 @@ export default async function NewMaintenancePlanPage() {
           label: technician.name,
           detail: technician.jobTitle ?? technician.email,
         }))}
+        initialAssetId={initialAssetId}
       />
     </main>
   );

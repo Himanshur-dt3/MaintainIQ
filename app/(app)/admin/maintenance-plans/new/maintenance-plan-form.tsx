@@ -12,6 +12,7 @@ type Option = {
 type MaintenancePlanFormProps = {
   assets: Option[];
   technicians: Option[];
+  initialAssetId?: string;
 };
 
 const frequencies = [
@@ -39,10 +40,11 @@ const priorities = [
 export default function MaintenancePlanForm({
   assets,
   technicians,
+  initialAssetId,
 }: MaintenancePlanFormProps) {
   const router = useRouter();
 
-  const [assetId, setAssetId] = useState("");
+  const [assetId, setAssetId] = useState(initialAssetId ?? "");
   const [technicianId, setTechnicianId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
