@@ -1,8 +1,8 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { requireRole } from "@/src/server/auth/guards";
+import { toApiErrorResponse } from "@/src/server/http/api-errors";
 import {
-  AssetNameConflictError,
   createAsset,
   listAssets,
 } from "@/src/server/services/assets";
@@ -36,17 +36,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ assets });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 403 },
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Failed to load assets." },
-      { status: 500 },
-    );
+    return toApiErrorResponse(error);
   }
 }
 
@@ -80,23 +70,6 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof AssetNameConflictError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 409 },
-      );
-    }
-
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 403 },
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Failed to create asset." },
-      { status: 500 },
-    );
+    return toApiErrorResponse(error);
   }
 }

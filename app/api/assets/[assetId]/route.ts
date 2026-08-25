@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { requireRole } from "@/src/server/auth/guards";
+import { toApiErrorResponse } from "@/src/server/http/api-errors";
 import {
-  AssetNameConflictError,
-  AssetNotFoundError,
   getAsset,
   updateAsset,
 } from "@/src/server/services/assets";
@@ -45,17 +44,7 @@ export async function GET(
 
     return NextResponse.json({ asset });
   } catch (error) {
-    if (error instanceof AssetNotFoundError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Failed to load asset." },
-      { status: 500 },
-    );
+    return toApiErrorResponse(error);
   }
 }
 
@@ -100,23 +89,6 @@ export async function PATCH(
 
     return NextResponse.json({ asset });
   } catch (error) {
-    if (error instanceof AssetNotFoundError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 404 },
-      );
-    }
-
-    if (error instanceof AssetNameConflictError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 409 },
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Failed to update asset." },
-      { status: 500 },
-    );
+    return toApiErrorResponse(error);
   }
 }
