@@ -173,11 +173,11 @@ export function recommendTechnicianDispatch(
     `${priorityLabel}-priority request`;
 
   if (best.titleMatchesIssue && best.jobTitle) {
-    rationale += ` Ã‚· role matches ${issueLower}`;
+    rationale += ` Ãƒâ€šÂ· role matches ${issueLower}`;
   } else if (best.jobTitle) {
-    rationale += ` Ã‚· ${best.jobTitle}`;
+    rationale += ` Ãƒâ€šÂ· ${best.jobTitle}`;
   } else {
-    rationale += " Ã‚· no specialization metadata available";
+    rationale += " Ãƒâ€šÂ· no specialization metadata available";
   }
 
   return {
@@ -472,5 +472,334 @@ export function calculatePredictiveAssetRisk(
     predictedFailureWindowDays,
     riskFactors,
     preventativeRecommendation,
+  };
+}
+
+export type PredictiveSlaBreachInput = {
+  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  elapsedHours: number;
+  estimatedResolutionHours: number | null;
+  technicianOpenTickets: number;
+  technicianAverageResolutionHours: number | null;
+};
+
+export type PredictiveSlaBreachInsight = {
+  breachProbabilityPercent: number;
+  riskLevel: "LOW" | "MEDIUM" | "HIGH";
+  estimatedResolutionHours: number | null;
+  remainingSlaHours: number;
+  reasons: string[];
+  recommendation: string;
+};
+
+/**
+ * Explainable SLA-breach prediction.
+ *
+ * Uses only operational signals already available in MaintainIQ.
+ * This is intentionally deterministic rather than pretending to be
+ * a statistically trained model when no training dataset exists.
+ */
+export function predictSlaBreach(
+  input: PredictiveSlaBreachInput,
+): PredictiveSlaBreachInsight {
+  const targetHours: Record<PredictiveSlaBreachInput["priority"], number> = {
+    CRITICAL: 4,
+    HIGH: 8,
+    MEDIUM: 24,
+    LOW: 72,
+  };
+
+  const elapsedHours = Math.max(0, input.elapsedHours);
+  const remainingSlaHours = Math.max(
+    0,
+    targetHours[input.priority] - elapsedHours,
+  );
+
+  const estimatedResolutionHours =
+    input.estimatedResolutionHours !== null
+      ? Math.max(0, input.estimatedResolutionHours)
+      : input.technicianAverageResolutionHours !== null
+        ? Math.max(0, input.technicianAverageResolutionHours)
+        : null;
+
+  let probability = 10;
+  const reasons: string[] = [];
+
+  if (estimatedResolutionHours !== null) {
+    if (estimatedResolutionHours > remainingSlaHours) {
+      probability += 45;
+      reasons.push("Estimated resolution time exceeds remaining SLA time");
+    } else if (estimatedResolutionHours > remainingSlaHours * 0.75) {
+      probability += 25;
+      reasons.push("Estimated resolution time is close to the SLA limit");
+    }
+  } else {
+    probability += 10;
+    reasons.push("Insufficient historical resolution-time data");
+  }
+
+  if (input.technicianOpenTickets >= 4) {
+    probability += 25;
+    reasons.push("Technician has a high active workload");
+  } else if (input.technicianOpenTickets >= 2) {
+    probability += 12;
+    reasons.push("Technician has multiple active tickets");
+  }
+
+  if (
+    input.technicianAverageResolutionHours !== null &&
+    input.technicianAverageResolutionHours > targetHours[input.priority]
+  ) {
+    probability += 15;
+    reasons.push("Technician historical resolution time exceeds this SLA target");
+  }
+
+  if (input.priority === "CRITICAL") {
+    probability += 10;
+    reasons.push("Critical priority has a very short SLA window");
+  }
+
+  probability = Math.max(0, Math.min(99, Math.round(probability)));
+
+  const riskLevel =
+    probability >= 70 ? "HIGH" : probability >= 40 ? "MEDIUM" : "LOW";
+
+  let recommendation =
+    "Continue monitoring the ticket and maintain the current assignment.";
+
+  if (riskLevel === "MEDIUM") {
+    recommendation =
+      "Review technician workload and consider prioritizing this ticket before the SLA window narrows.";
+  }
+
+  if (riskLevel === "HIGH") {
+    recommendation =
+      "Prioritize this ticket immediately and consider reassignment or escalation to reduce SLA-breach risk.";
+  }
+
+  if (reasons.length === 0) {
+    reasons.push("No significant SLA-breach signals detected");
+  }
+
+  return {
+    breachProbabilityPercent: probability,
+    riskLevel,
+    estimatedResolutionHours,
+    remainingSlaHours,
+    reasons,
+    recommendation,
+  };
+}
+
+export type MaintenanceIntervalOptimizationInput = {
+  totalResolvedRepairs: number;
+  recurringIssueCount: number;
+  recurrenceRate: number;
+  overdueMaintenancePlans: number;
+  currentIntervalDays: number | null;
+};
+
+export type MaintenanceIntervalOptimizationInsight = {
+  action: "INCREASE_FREQUENCY" | "MAINTAIN" | "DECREASE_FREQUENCY" | "INSUFFICIENT_DATA";
+  recommendedIntervalDays: number | null;
+  rationale: string;
+};
+
+/**
+ * Recommends preventive-maintenance cadence from observed repair recurrence.
+ */
+export function optimizeMaintenanceInterval(
+  input: MaintenanceIntervalOptimizationInput,
+): MaintenanceIntervalOptimizationInsight {
+  const repairs = Math.max(0, input.totalResolvedRepairs);
+  const recurrenceRate = Math.max(
+    0,
+    Math.min(100, input.recurrenceRate),
+  );
+  const overdue = Math.max(0, input.overdueMaintenancePlans);
+
+  if (repairs === 0 || input.currentIntervalDays === null) {
+    return {
+      action: "INSUFFICIENT_DATA",
+      recommendedIntervalDays: input.currentIntervalDays,
+      rationale:
+        "Insufficient repair history or maintenance-interval data to safely optimize the preventive schedule.",
+    };
+  }
+
+  let factor = 1;
+
+  if (recurrenceRate >= 60 || input.recurringIssueCount >= 4) {
+    factor = 0.7;
+  } else if (recurrenceRate >= 40 || input.recurringIssueCount >= 2) {
+    factor = 0.85;
+  } else if (recurrenceRate <= 20 && overdue === 0 && repairs >= 5) {
+    factor = 1.15;
+  }
+
+  if (overdue > 0) {
+    factor = Math.min(factor, 0.85);
+  }
+
+  const recommendedIntervalDays = Math.max(
+    7,
+    Math.round(input.currentIntervalDays * factor),
+  );
+
+  if (factor < 1) {
+    return {
+      action: "INCREASE_FREQUENCY",
+      recommendedIntervalDays,
+      rationale:
+        "Recurring repair activity indicates that the current preventive-maintenance interval may be too long.",
+    };
+  }
+
+  if (factor > 1) {
+    return {
+      action: "DECREASE_FREQUENCY",
+      recommendedIntervalDays,
+      rationale:
+        "Repair history is stable with low recurrence and no overdue maintenance, so the interval can be cautiously extended.",
+    };
+  }
+
+  return {
+    action: "MAINTAIN",
+    recommendedIntervalDays,
+    rationale:
+      "Current repair recurrence does not provide sufficient evidence to change the preventive-maintenance cadence.",
+  };
+}
+
+export type RepairReplaceRecommendationInput = {
+  ageYears: number;
+  failureCount: number;
+  annualMaintenanceCost: number;
+  annualDowntimeHours: number;
+  replacementCost: number | null;
+  criticality: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+};
+
+export type RepairReplaceRecommendationInsight = {
+  recommendation: "REPAIR" | "REVIEW" | "REPLACE";
+  confidence: "LOW" | "MEDIUM" | "HIGH";
+  estimatedThreeYearMaintenanceCost: number;
+  estimatedThreeYearImpactCost: number;
+  rationale: string[];
+};
+
+/**
+ * Business-oriented repair-vs-replace decision support.
+ *
+ * When replacement cost is unavailable, the engine deliberately returns
+ * REVIEW instead of inventing a financial saving.
+ */
+export function recommendRepairVsReplace(
+  input: RepairReplaceRecommendationInput,
+): RepairReplaceRecommendationInsight {
+  const ageYears = Math.max(0, input.ageYears);
+  const failureCount = Math.max(0, input.failureCount);
+  const annualMaintenanceCost = Math.max(0, input.annualMaintenanceCost);
+  const annualDowntimeHours = Math.max(0, input.annualDowntimeHours);
+
+  const threeYearMaintenanceCost = annualMaintenanceCost * 3;
+
+  // Downtime is treated as an operational burden only when a monetary
+  // replacement comparison is unavailable.
+  const threeYearImpactCost =
+    threeYearMaintenanceCost + annualDowntimeHours * 3;
+
+  const rationale: string[] = [];
+
+  if (failureCount >= 5) {
+    rationale.push("High historical failure frequency");
+  } else if (failureCount >= 3) {
+    rationale.push("Repeated asset failures");
+  }
+
+  if (ageYears >= 8) {
+    rationale.push("Asset is in an advanced lifecycle stage");
+  } else if (ageYears >= 5) {
+    rationale.push("Asset has accumulated significant operating age");
+  }
+
+  if (annualDowntimeHours >= 40) {
+    rationale.push("High annual downtime burden");
+  }
+
+  if (input.criticality === "CRITICAL") {
+    rationale.push("Critical asset failure has high operational consequence");
+  } else if (input.criticality === "HIGH") {
+    rationale.push("High asset criticality increases replacement priority");
+  }
+
+  if (input.replacementCost === null) {
+    return {
+      recommendation:
+        failureCount >= 5 || ageYears >= 8 ? "REVIEW" : "REPAIR",
+      confidence: "LOW",
+      estimatedThreeYearMaintenanceCost: threeYearMaintenanceCost,
+      estimatedThreeYearImpactCost: threeYearImpactCost,
+      rationale:
+        rationale.length > 0
+          ? [
+              ...rationale,
+              "Replacement cost is unavailable, so a financial replacement decision cannot be proven.",
+            ]
+          : [
+              "No strong replacement signals detected.",
+              "Replacement cost is unavailable.",
+            ],
+    };
+  }
+
+  const replacementCost = Math.max(0, input.replacementCost);
+
+  if (threeYearMaintenanceCost > replacementCost) {
+    rationale.push(
+      "Projected three-year maintenance cost exceeds replacement cost",
+    );
+  }
+
+  if (
+    (failureCount >= 5 || ageYears >= 8) &&
+    threeYearMaintenanceCost >= replacementCost * 0.75
+  ) {
+    return {
+      recommendation: "REPLACE",
+      confidence: "HIGH",
+      estimatedThreeYearMaintenanceCost: threeYearMaintenanceCost,
+      estimatedThreeYearImpactCost: threeYearImpactCost,
+      rationale,
+    };
+  }
+
+  if (
+    failureCount >= 3 ||
+    ageYears >= 5 ||
+    annualDowntimeHours >= 40
+  ) {
+    return {
+      recommendation: "REVIEW",
+      confidence: "MEDIUM",
+      estimatedThreeYearMaintenanceCost: threeYearMaintenanceCost,
+      estimatedThreeYearImpactCost: threeYearImpactCost,
+      rationale:
+        rationale.length > 0
+          ? rationale
+          : ["Some lifecycle or maintenance burden signals are present."],
+    };
+  }
+
+  return {
+    recommendation: "REPAIR",
+    confidence: "MEDIUM",
+    estimatedThreeYearMaintenanceCost: threeYearMaintenanceCost,
+    estimatedThreeYearImpactCost: threeYearImpactCost,
+    rationale:
+      rationale.length > 0
+        ? rationale
+        : ["Current maintenance burden does not justify replacement."],
   };
 }
