@@ -47,13 +47,22 @@ export default async function AdminPage() {
     role: session.user.role,
   };
 
-  const [metrics, allTickets, technicians, technicianAnalytics, maintenanceInsights] = await Promise.all([
+  const [metrics, allTickets, technicians, technicianAnalytics] = await Promise.all([
     getAdminDashboardMetrics(actor),
     listAdminTickets(actor, {}),
     listTechniciansForAdmin(actor),
     getTechnicianAnalytics(actor),
-    getAssetMaintenanceInsights(),
   ]);
+
+  let maintenanceInsights: Awaited<
+    ReturnType<typeof getAssetMaintenanceInsights>
+  > = [];
+
+  try {
+    maintenanceInsights = await getAssetMaintenanceInsights();
+  } catch (error) {
+    console.error("Maintenance intelligence unavailable:", error);
+  }
 
   const tickets = allTickets.slice(0, 6);
   const priorityMaintenanceInsights = maintenanceInsights
@@ -91,7 +100,20 @@ export default async function AdminPage() {
         item.dataConfidence === "INSUFFICIENT",
     ),
   ].slice(0, 6);
-  const maintenanceAiBrief = await generateMaintenanceAiBrief(maintenanceInsights);
+  let maintenanceAiBrief = {
+    headline: "Maintenance intelligence unavailable",
+    summary: "The maintenance intelligence service is temporarily unavailable. Review the asset risk signals and maintenance queue directly.",
+    priorityAsset: "No AI priority available",
+    priorityReason: "AI analysis could not be generated.",
+    recommendedAction: "Review high-risk assets and overdue maintenance plans.",
+    systemicPattern: "No systemic pattern available.",
+  };
+
+  try {
+    maintenanceAiBrief = await generateMaintenanceAiBrief(maintenanceInsights);
+  } catch (error) {
+    console.error("Maintenance AI brief unavailable:", error);
+  }
 
   // Mutually exclusive ticket-status groups for the dashboard pie chart.
   const openCount = allTickets.filter(
