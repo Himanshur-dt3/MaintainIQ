@@ -2,7 +2,7 @@
 
 import type { Role } from "@prisma/client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { NotificationButton } from "@/src/components/notification-button";
 
@@ -45,6 +45,8 @@ const roleLabels: Record<Role, string> = {
 
 export function ApplicationShell({ user, children }: ApplicationShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const dashboardSearch = searchParams.get("q") ?? "";
   const navigation = roleNavigation[user.role];
 
   const initials =
@@ -158,13 +160,38 @@ export function ApplicationShell({ user, children }: ApplicationShellProps) {
           </div>
 
           {/* Search */}
-          <div className="hidden w-full max-w-md md:flex">
-            <div className="flex h-10 w-full items-center rounded-md border border-[#35393c] bg-[#1d2022] px-3 text-sm text-[#858a85] transition focus-within:border-[#5e635f]">
-              <span className="mr-2 text-base text-[#858a85]">⌕</span>
-              <span>Search...</span>
-            </div>
-          </div>
+          {user.role === "ADMIN" ? (
+            <form
+              action="/admin"
+              method="get"
+              className="hidden w-full max-w-md md:flex"
+            >
+              <div className="flex h-10 w-full items-center rounded-md border border-[#35393c] bg-[#1d2022] px-3 text-sm transition focus-within:border-[#5f9eea] focus-within:ring-1 focus-within:ring-[#5f9eea]/20">
+                <span className="mr-2 text-base text-[#858a85]">⌕</span>
 
+                <input
+                  type="search"
+                  name="q"
+                  defaultValue={dashboardSearch}
+                  placeholder="Search tickets, assets, people..."
+                  autoComplete="off"
+                  className="h-full w-full bg-transparent text-sm text-[#e8e8e3] outline-none placeholder:text-[#666b67]"
+                  aria-label="Search dashboard"
+                />
+
+                <kbd className="ml-2 hidden shrink-0 rounded border border-[#35393c] bg-[#222527] px-1.5 py-0.5 text-[9px] font-semibold text-[#737873] lg:inline">
+                  Enter
+                </kbd>
+              </div>
+            </form>
+          ) : (
+            <div className="hidden w-full max-w-md md:flex">
+              <div className="flex h-10 w-full items-center rounded-md border border-[#35393c] bg-[#1d2022] px-3 text-sm text-[#858a85]">
+                <span className="mr-2 text-base text-[#858a85]">⌕</span>
+                <span>Search...</span>
+              </div>
+            </div>
+          )}
           {/* Right side */}
           <div className="ml-auto flex items-center gap-3 sm:gap-5">
 
@@ -195,8 +222,3 @@ export function ApplicationShell({ user, children }: ApplicationShellProps) {
     </div>
   );
 }
-
-
-
-
-
