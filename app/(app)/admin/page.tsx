@@ -4,6 +4,7 @@ import { IssueType, Priority, TicketStatus } from "@prisma/client";
 import { AdminTicketManagement } from "@/src/components/admin-ticket-management";
 import { MaintenanceCopilot } from "@/src/components/maintenance-copilot";
 import { getAssetMaintenanceInsights } from "@/src/server/services/maintenance-intelligence";
+import { getTechnicianAnalytics } from "@/src/server/services/technician-analytics";
 import { generateMaintenanceAiBrief } from "@/src/server/services/claude";
 import { requireRole } from "@/src/server/auth/guards";
 import {
@@ -46,10 +47,11 @@ export default async function AdminPage() {
     role: session.user.role,
   };
 
-  const [metrics, allTickets, technicians, maintenanceInsights] = await Promise.all([
+  const [metrics, allTickets, technicians, technicianAnalytics, maintenanceInsights] = await Promise.all([
     getAdminDashboardMetrics(actor),
     listAdminTickets(actor, {}),
     listTechniciansForAdmin(actor),
+    getTechnicianAnalytics(actor),
     getAssetMaintenanceInsights(),
   ]);
 
@@ -290,7 +292,7 @@ const kpiValues = {
                       </h3>
 
                       <p className="mt-1 text-[10px] text-[#707570]">
-                        {insight.assetType} · {insight.location}
+                        {insight.assetType} Ãƒâ€šÃ‚Â· {insight.location}
                       </p>
                     </div>
 
@@ -547,7 +549,7 @@ const kpiValues = {
                         : null,
                   ]
                     .filter(Boolean)
-                    .join(" · ") ||
+                    .join(" Ãƒâ€šÃ‚Â· ") ||
                   "Maintenance activity warrants routine monitoring.";
 
               const riskClass =
@@ -932,47 +934,89 @@ const kpiValues = {
         <div className="flex items-center justify-between border-b border-[#2d3033] pb-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
-              Assignment
+              Workforce Performance
             </p>
-
             <h2 className="mt-1 text-base font-bold text-[#ededE9]">
-              Active Technicians
+              Technician Analytics
             </h2>
           </div>
-
           <span className="rounded-md border border-[#35393c] bg-[#202326] px-2.5 py-1 text-[10px] font-semibold text-[#929792]">
-            {technicians.length} active
+            {technicianAnalytics.length} active
           </span>
         </div>
 
-        <ul className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {technicians.map((technician) => (
-            <li
-              key={technician.id}
-              className="flex items-center justify-between rounded-md border border-[#303438] bg-[#141718] px-4 py-3 transition hover:border-[#454a4d]"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#272a2c] text-xs font-bold text-[#d1d3ce]">
-                  {technician.name.charAt(0).toUpperCase()}
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {technicianAnalytics.map((analytics) => {
+            const resolutionHours = analytics.performance.averageResolutionHours;
+            const responseRate = analytics.performance.firstResponseRate;
+            const slaRate = analytics.performance.slaComplianceRate;
+
+            return (
+              <article
+                key={analytics.technician.id}
+                className="rounded-md border border-[#303438] bg-[#141718] p-4 transition hover:border-[#454a4d]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#272a2c] text-xs font-bold text-[#d1d3ce]">
+                      {analytics.technician.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-[#e1e2dd]">
+                        {analytics.technician.name}
+                      </p>
+                      <p className="truncate text-[10px] text-[#666b66]">
+                        {analytics.technician.jobTitle ?? analytics.technician.email}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-md border border-[#383c3f] bg-[#202326] px-2 py-1 text-[10px] font-semibold text-[#aeb3ae]">
+                    {analytics.workload.openTickets} open
+                  </span>
                 </div>
 
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-[#e1e2dd]">
-                    {technician.name}
-                  </p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
+                    <p className="text-[9px] uppercase tracking-wider text-[#666b66]">Resolved</p>
+                    <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
+                      {analytics.performance.resolvedTickets}
+                    </p>
+                  </div>
 
-                  <p className="truncate text-[10px] text-[#666b66]">
-                    {technician.jobTitle ?? technician.email}
-                  </p>
+                  <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
+                    <p className="text-[9px] uppercase tracking-wider text-[#666b66]">Avg. Resolution</p>
+                    <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
+                      {resolutionHours === null ? "—" : `${resolutionHours.toFixed(1)}h`}
+                    </p>
+                  </div>
+
+                  <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
+                    <p className="text-[9px] uppercase tracking-wider text-[#666b66]">First Response</p>
+                    <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
+                      {responseRate === null ? "—" : `${Math.round(responseRate * 100)}%`}
+                    </p>
+                  </div>
+
+                  <div className="rounded-md border border-[#2c3032] bg-[#1b1e20] p-2.5">
+                    <p className="text-[9px] uppercase tracking-wider text-[#666b66]">SLA Compliance</p>
+                    <p className="mt-1 text-sm font-bold text-[#e1e2dd]">
+                      {slaRate === null ? "—" : `${Math.round(slaRate * 100)}%`}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <span className="ml-3 shrink-0 rounded-md border border-[#383c3f] bg-[#202326] px-2 py-1 text-[10px] font-semibold text-[#aeb3ae]">
-                {technician._count.assignedTickets} open
-              </span>
-            </li>
-          ))}
-        </ul>
+                <div className="mt-3 flex items-center justify-between border-t border-[#292d2f] pt-3">
+                  <span className="text-[9px] uppercase tracking-wider text-[#666b66]">
+                    Workload
+                  </span>
+                  <span className="text-[10px] font-semibold text-[#aeb3ae]">
+                    {analytics.workload.openTickets} open / {analytics.workload.assignedTickets} assigned
+                  </span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
 
