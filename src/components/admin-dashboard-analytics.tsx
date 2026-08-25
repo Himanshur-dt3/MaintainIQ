@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type StatusKey = "open" | "inProgress" | "resolved";
 
@@ -97,6 +97,9 @@ export function AdminDashboardAnalytics({
   recentActivity,
 }: AdminDashboardAnalyticsProps) {
   const [hoveredStatus, setHoveredStatus] = useState<StatusKey | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const donutRef = useRef<HTMLDivElement>(null);
+  const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
 
   const total = counts.open + counts.inProgress + counts.resolved;
 
@@ -160,6 +163,7 @@ export function AdminDashboardAnalytics({
         <div className="mt-5 flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
           {/* DONUT */}
           <div
+            ref={donutRef}
             className="relative h-44 w-44 shrink-0"
             onMouseLeave={() => setHoveredStatus(null)}
           >
@@ -205,7 +209,28 @@ export function AdminDashboardAnalytics({
                           ? `drop-shadow(0 0 7px ${STATUS_META[segment.key].color})`
                           : "none",
                     }}
-                    onMouseEnter={() => setHoveredStatus(segment.key)}
+                    onMouseEnter={(event) => {
+                      setHoveredStatus(segment.key);
+
+                      if (donutRef.current) {
+                        const rect = donutRef.current.getBoundingClientRect();
+
+                        setTooltipPosition({
+                          x: event.clientX - rect.left,
+                          y: event.clientY - rect.top,
+                        });
+                      }
+                    }}
+                    onMouseMove={(event) => {
+                      if (donutRef.current) {
+                        const rect = donutRef.current.getBoundingClientRect();
+
+                        setTooltipPosition({
+                          x: event.clientX - rect.left,
+                          y: event.clientY - rect.top,
+                        });
+                      }
+                    }}
                     pathLength="100"
                   />
                 ) : null,
@@ -242,7 +267,14 @@ export function AdminDashboardAnalytics({
             </svg>
 
             {activeStatus ? (
-              <div className="pointer-events-none absolute -right-28 -top-3 z-20 w-44 rounded-md border border-[#3b4247] bg-[#111517] p-3 shadow-xl">
+              <div
+                className="pointer-events-none absolute z-20 w-44 rounded-md border border-[#3b4247] bg-[#111517] p-3 shadow-xl"
+                style={{
+                  left: tooltipPosition.x + 12,
+                  top: tooltipPosition.y + 12,
+                  transform: "translate(0, 0)",
+                }}
+              >
                 <div className="flex items-center gap-2">
                   <span
                     className="h-2 w-2 rounded-full"
@@ -365,10 +397,23 @@ export function AdminDashboardAnalytics({
               recentActivity.map((event, index) => (
                 <li
                   key={`${event.ticketTitle}-${event.createdAt}-${index}`}
-                  tabIndex={0}
-                  className="group rounded-md border border-transparent px-2 py-3 transition-all duration-150 hover:border-[#30383d] hover:bg-[#202326] focus:border-[#3b4650] focus:bg-[#202326] focus:outline-none"
-                  title={`${event.actorName} ${formatAction(event.action)} ${event.ticketTitle}.`}
+                  className="list-none"
                 >
+                  <button
+                    type="button"
+                    aria-pressed={selectedActivity === index}
+                    onClick={() =>
+                      setSelectedActivity((current) =>
+                        current === index ? null : index,
+                      )
+                    }
+                    className={`group w-full rounded-md border px-2 py-3 text-left transition-all duration-150 focus:outline-none ${
+                      selectedActivity === index
+                        ? "border-[#3b4650] bg-[#202326]"
+                        : "border-transparent hover:border-[#30383d] hover:bg-[#202326]"
+                    }`}
+                    title={`${event.actorName} ${formatAction(event.action)} ${event.ticketTitle}.`}
+                  >
                   <div className="flex gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#343a3e] bg-[#202427] text-[9px] font-bold text-[#aeb4b0] transition group-hover:border-[#4a5359] group-hover:text-[#e2e5e1]">
                       {event.actorName.slice(0, 1).toUpperCase()}
@@ -395,6 +440,7 @@ export function AdminDashboardAnalytics({
                       ↓
                     </span>
                   </div>
+                  </button>
                 </li>
               ))
             )}
