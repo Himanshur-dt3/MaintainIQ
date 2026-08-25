@@ -17,6 +17,8 @@ export type TechnicianRecommendation = {
 export type AssetHealthInsight = {
   healthScore: number; // 0 to 100
   riskLevel: "HEALTHY" | "MODERATE" | "HIGH_RISK";
+  failureRiskPercent: number; // 0 to 100
+  predictedFailureWindowDays: number | null;
   preventativeRecommendation: string;
   totalTicketCount: number;
 };
@@ -162,9 +164,9 @@ export function recommendTechnicianDispatch(
     `and best available capacity for this ${priorityLabel}-priority request`;
 
   if (best.titleMatchesIssue && best.jobTitle) {
-    rationale += ` · role matches ${issueLower}`;
+    rationale += ` Â· role matches ${issueLower}`;
   } else if (best.jobTitle) {
-    rationale += ` · ${best.jobTitle}`;
+    rationale += ` Â· ${best.jobTitle}`;
   }
 
   return {
@@ -182,28 +184,47 @@ export function recommendTechnicianDispatch(
  * @returns Health score (0-100), risk status, and preventative maintenance action.
  */
 export function calculateAssetHealthScore(ticketCount: number): AssetHealthInsight {
-  if (ticketCount <= 1) {
+  const normalizedCount = Math.max(0, ticketCount);
+
+  if (normalizedCount <= 1) {
     return {
       healthScore: 94,
       riskLevel: "HEALTHY",
-      preventativeRecommendation: "Asset is operating normally. Routine quarterly inspection advised.",
-      totalTicketCount: ticketCount,
+      failureRiskPercent: normalizedCount === 0 ? 6 : 12,
+      predictedFailureWindowDays: null,
+      preventativeRecommendation:
+        "Asset is operating normally. Routine quarterly inspection advised.",
+      totalTicketCount: normalizedCount,
     };
   }
 
-  if (ticketCount <= 3) {
+  if (normalizedCount <= 3) {
     return {
       healthScore: 72,
       riskLevel: "MODERATE",
-      preventativeRecommendation: "Moderate maintenance history. Schedule preventative calibration within 30 days.",
-      totalTicketCount: ticketCount,
+      failureRiskPercent: 35 + (normalizedCount - 2) * 10,
+      predictedFailureWindowDays: 90,
+      preventativeRecommendation:
+        "Moderate maintenance history. Schedule preventative calibration within 30 days.",
+      totalTicketCount: normalizedCount,
     };
   }
+
+  const failureRiskPercent = Math.min(
+    95,
+    60 + (normalizedCount - 4) * 7,
+  );
 
   return {
     healthScore: 42,
     riskLevel: "HIGH_RISK",
-    preventativeRecommendation: "High failure frequency detected! Immediate preventative overhaul or asset replacement review recommended.",
-    totalTicketCount: ticketCount,
+    failureRiskPercent,
+    predictedFailureWindowDays: Math.max(
+      14,
+      60 - (normalizedCount - 4) * 7,
+    ),
+    preventativeRecommendation:
+      "High failure frequency detected. Immediate preventative overhaul or asset replacement review recommended.",
+    totalTicketCount: normalizedCount,
   };
 }
