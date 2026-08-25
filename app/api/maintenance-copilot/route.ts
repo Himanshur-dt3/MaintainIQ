@@ -1,6 +1,7 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { requireRole } from "@/src/server/auth/guards";
+import { toApiErrorResponse } from "@/src/server/http/api-errors";
 import { askMaintenanceCopilot } from "@/src/server/services/maintenance-copilot";
 
 export async function POST(request: Request) {
@@ -28,20 +29,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Maintenance Copilot request failed:", error);
-
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Maintenance Copilot is temporarily unavailable.";
-
-    const status =
-      message.includes("administrator")
-        ? 403
-        : message.includes("question")
-          ? 400
-          : 500;
-
-    return NextResponse.json({ error: message }, { status });
+    return toApiErrorResponse(error);
   }
 }
