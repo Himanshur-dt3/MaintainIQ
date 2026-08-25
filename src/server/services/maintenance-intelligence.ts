@@ -1,4 +1,8 @@
-import { Priority, TicketStatus } from "@prisma/client";
+﻿import {
+  AssetCriticality,
+  Priority,
+  TicketStatus,
+} from "@prisma/client";
 
 import prisma from "@/src/server/db/prisma";
 
@@ -25,6 +29,7 @@ export type AssetMaintenanceInsight = {
   assetName: string;
   assetType: string;
   location: string;
+  criticality: AssetCriticality;
 
   healthScore: number;
   riskLevel: MaintenanceRiskLevel;
@@ -136,6 +141,7 @@ export async function getAssetMaintenanceInsights(): Promise<
       name: true,
       type: true,
       location: true,
+      criticality: true,
       tickets: {
         select: {
           issueType: true,
@@ -215,7 +221,7 @@ export async function getAssetMaintenanceInsights(): Promise<
        * - historical failures
        * - worsening failure trend
        *
-       * Health is intentionally bounded to 0–100.
+       * Health is intentionally bounded to 0-100.
        */
       let riskPoints = 0;
 
@@ -315,6 +321,13 @@ export async function getAssetMaintenanceInsights(): Promise<
             ? 0
             : 3;
 
+      const criticalityWeight = {
+        [AssetCriticality.LOW]: 0,
+        [AssetCriticality.MEDIUM]: 5,
+        [AssetCriticality.HIGH]: 10,
+        [AssetCriticality.CRITICAL]: 18,
+      }[asset.criticality];
+
       const priorityScore = Math.max(
         0,
         Math.min(
@@ -325,7 +338,8 @@ export async function getAssetMaintenanceInsights(): Promise<
               workloadWeight +
               severityWeight +
               activityWeight +
-              confidenceAdjustment,
+              confidenceAdjustment +
+              criticalityWeight,
           ),
         ),
       );
@@ -335,6 +349,7 @@ export async function getAssetMaintenanceInsights(): Promise<
         assetName: asset.name,
         assetType: asset.type,
         location: asset.location,
+        criticality: asset.criticality,
 
         healthScore,
         riskLevel,

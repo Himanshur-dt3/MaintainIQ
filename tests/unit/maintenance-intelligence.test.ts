@@ -1,4 +1,5 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { AssetCriticality } from "@prisma/client";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMock = vi.hoisted(() => ({
   asset: {
@@ -30,6 +31,7 @@ function makeAsset(
     name,
     type: "HVAC",
     location: "Main Lobby",
+    criticality: AssetCriticality.MEDIUM,
     tickets: tickets.map((ticket) => ({
       issueType: ticket.issueType ?? "HVAC",
       status: ticket.status ?? "RESOLVED",
@@ -197,6 +199,29 @@ describe("maintenance intelligence", () => {
     expect(urgent!.priorityScore).toBeGreaterThan(stable!.priorityScore);
   });
 
+  it("increases priority score based on asset criticality", async () => {
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        ...makeAsset("asset-1", "Low Criticality Asset", []),
+        criticality: AssetCriticality.LOW,
+      },
+      {
+        ...makeAsset("asset-2", "Critical Asset", []),
+        criticality: AssetCriticality.CRITICAL,
+      },
+    ]);
+
+    const insights = await getAssetMaintenanceInsights();
+
+    const lowCriticality = insights.find((item) => item.assetId === "asset-1");
+    const critical = insights.find((item) => item.assetId === "asset-2");
+
+    expect(lowCriticality).toBeDefined();
+    expect(critical).toBeDefined();
+    expect(critical!.criticality).toBe(AssetCriticality.CRITICAL);
+    expect(lowCriticality!.criticality).toBe(AssetCriticality.LOW);
+    expect(critical!.priorityScore).toBeGreaterThan(lowCriticality!.priorityScore);
+  });
   it("sorts returned insights from lowest health to highest health", async () => {
     prismaMock.asset.findMany.mockResolvedValue([
       makeAsset("asset-1", "Healthy Asset", []),
