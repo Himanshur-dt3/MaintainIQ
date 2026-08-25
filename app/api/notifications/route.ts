@@ -1,7 +1,10 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { requireUser } from "@/src/server/auth/guards";
+import { toApiErrorResponse } from "@/src/server/http/api-errors";
 import prisma from "@/src/server/db/prisma";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -71,11 +74,8 @@ export async function GET() {
       .slice(0, 30);
 
     return NextResponse.json({ notifications });
-  } catch {
-    return NextResponse.json(
-      { notifications: [] },
-      { status: 401 },
-    );
+  } catch (error) {
+    return toApiErrorResponse(error);
   }
 }
 
