@@ -23,6 +23,7 @@ const roleNavigation: Record<
   ADMIN: [
     { href: "/admin", label: "Dashboard", icon: "D" },
     { href: "/admin/maintenance-plans", label: "Maintenance Plans", icon: "M" },
+    { href: "/admin/assets", label: "Assets", icon: "A" },
     { href: "/admin/past-tickets", label: "Past Tickets", icon: "T" },
     { href: "/admin/reviews", label: "Reviews", icon: "★" },
   ],
