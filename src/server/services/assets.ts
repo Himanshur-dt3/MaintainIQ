@@ -8,6 +8,10 @@ import {
 } from "@/src/server/auth/guards";
 import prisma from "@/src/server/db/prisma";
 import type { TicketActor } from "@/src/server/services/tickets";
+import {
+  calculatePredictiveAssetRisk,
+  type PredictiveAssetRiskInsight,
+} from "@/src/server/services/ai-assistant";
 import type {
   AssetListFilters,
   CreateAssetInput,
@@ -194,5 +198,136 @@ export async function updateAsset(
       id: assetId,
     },
     data: input,
+  });
+}
+
+export async function getAssetPredictiveRisk(
+  actor: TicketActor,
+  assetId: string,
+): Promise<PredictiveAssetRiskInsight> {
+  requireAdmin(actor);
+
+  const now = new Date();
+
+  const asset = await prisma.asset.findUnique({
+    where: { id: assetId },
+    select: {
+      id: true,
+      criticality: true,
+      tickets: {
+        select: {
+          status: true,
+          priority: true,
+          issueType: true,
+          createdAt: true,
+          resolvedAt: true,
+          slaDeadline: true,
+        },
+      },
+      maintenancePlans: {
+        where: {
+          status: "ACTIVE",
+        },
+        select: {
+          nextDueAt: true,
+        },
+      },
+    },
+  });
+
+  if (!asset) {
+    throw new AssetNotFoundError();
+  }
+
+  const tickets = asset.tickets;
+
+  const totalTickets = tickets.length;
+
+  const openTickets = tickets.filter(
+    (ticket) => ticket.status !== "RESOLVED",
+  ).length;
+
+  const criticalTickets = tickets.filter(
+    (ticket) => ticket.priority === "CRITICAL",
+  ).length;
+
+  const highPriorityTickets = tickets.filter(
+    (ticket) => ticket.priority === "HIGH",
+  ).length;
+
+  const resolvedTickets = tickets.filter(
+    (ticket) =>
+      ticket.status === "RESOLVED" &&
+      ticket.resolvedAt !== null,
+  );
+
+  const slaEligibleTickets = tickets.filter(
+    (ticket) => ticket.slaDeadline !== null,
+  );
+
+  const slaBreaches = slaEligibleTickets.filter(
+    (ticket) =>
+      ticket.resolvedAt !== null &&
+      ticket.slaDeadline !== null &&
+      ticket.resolvedAt.getTime() > ticket.slaDeadline.getTime(),
+  ).length;
+
+  const issueCounts = new Map<string, number>();
+
+  for (const ticket of tickets) {
+    issueCounts.set(
+      ticket.issueType,
+      (issueCounts.get(ticket.issueType) ?? 0) + 1,
+    );
+  }
+
+  const recurringIssueEntry = [...issueCounts.entries()]
+    .sort((a, b) => b[1] - a[1])[0];
+
+  const recurringIssueCount = recurringIssueEntry?.[1] ?? 0;
+
+  const recurringIssueRate =
+    totalTickets > 0
+      ? (recurringIssueCount / totalTickets) * 100
+      : 0;
+
+  const resolutionHours = resolvedTickets
+    .filter((ticket) => ticket.resolvedAt !== null)
+    .map(
+      (ticket) =>
+        (ticket.resolvedAt!.getTime() - ticket.createdAt.getTime()) /
+        3_600_000,
+    );
+
+  const averageResolutionHours =
+    resolutionHours.length > 0
+      ? resolutionHours.reduce(
+          (sum, value) => sum + value,
+          0,
+        ) / resolutionHours.length
+      : null;
+
+  const maintenancePlanCount =
+    asset.maintenancePlans.length;
+
+  const overdueMaintenancePlans =
+    asset.maintenancePlans.filter(
+      (plan) => plan.nextDueAt.getTime() < now.getTime(),
+    ).length;
+
+  return calculatePredictiveAssetRisk({
+    totalTickets,
+    openTickets,
+    criticalTickets,
+    highPriorityTickets,
+    resolvedTickets: resolvedTickets.length,
+    slaEligibleTickets: slaEligibleTickets.length,
+    slaBreaches,
+    recurringIssueCount,
+    recurringIssueRate,
+    averageResolutionHours,
+    maintenancePlanCount,
+    overdueMaintenancePlans,
+    criticality: asset.criticality,
   });
 }

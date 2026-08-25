@@ -173,11 +173,11 @@ export function recommendTechnicianDispatch(
     `${priorityLabel}-priority request`;
 
   if (best.titleMatchesIssue && best.jobTitle) {
-    rationale += ` · role matches ${issueLower}`;
+    rationale += ` Ã‚· role matches ${issueLower}`;
   } else if (best.jobTitle) {
-    rationale += ` · ${best.jobTitle}`;
+    rationale += ` Ã‚· ${best.jobTitle}`;
   } else {
-    rationale += " · no specialization metadata available";
+    rationale += " Ã‚· no specialization metadata available";
   }
 
   return {
@@ -194,16 +194,35 @@ export function recommendTechnicianDispatch(
  * @returns Health score (0-100), risk status, and preventative maintenance action.
  */
 export function calculateAssetHealthScore(ticketCount: number): AssetHealthInsight {
-  const normalizedCount = Math.max(0, ticketCount);
+  const normalizedCount = Math.max(0, Math.floor(ticketCount));
 
-  if (normalizedCount <= 1) {
+  /*
+   * Backward-compatible baseline estimator.
+   *
+   * This function intentionally remains deterministic and requires no
+   * database access. Rich asset-level prediction can be layered on top
+   * using the persisted ticket and maintenance signals.
+   */
+  if (normalizedCount === 0) {
     return {
-      healthScore: 94,
+      healthScore: 96,
       riskLevel: "HEALTHY",
-      failureRiskPercent: normalizedCount === 0 ? 6 : 12,
+      failureRiskPercent: 4,
       predictedFailureWindowDays: null,
       preventativeRecommendation:
-        "Asset is operating normally. Routine quarterly inspection advised.",
+        "No recorded failures. Continue scheduled preventive maintenance and routine inspection.",
+      totalTicketCount: 0,
+    };
+  }
+
+  if (normalizedCount === 1) {
+    return {
+      healthScore: 90,
+      riskLevel: "HEALTHY",
+      failureRiskPercent: 10,
+      predictedFailureWindowDays: null,
+      preventativeRecommendation:
+        "Low historical failure activity. Continue scheduled preventive maintenance and monitor for recurrence.",
       totalTicketCount: normalizedCount,
     };
   }
@@ -215,7 +234,7 @@ export function calculateAssetHealthScore(ticketCount: number): AssetHealthInsig
       failureRiskPercent: 35 + (normalizedCount - 2) * 10,
       predictedFailureWindowDays: 90,
       preventativeRecommendation:
-        "Moderate maintenance history. Schedule preventative calibration within 30 days.",
+        "Moderate maintenance activity detected. Review recurring issues and schedule preventive inspection within 30 days.",
       totalTicketCount: normalizedCount,
     };
   }
@@ -226,15 +245,232 @@ export function calculateAssetHealthScore(ticketCount: number): AssetHealthInsig
   );
 
   return {
-    healthScore: 42,
+    healthScore: Math.max(
+      25,
+      42 - Math.max(0, normalizedCount - 4) * 3,
+    ),
     riskLevel: "HIGH_RISK",
     failureRiskPercent,
     predictedFailureWindowDays: Math.max(
       14,
-      60 - (normalizedCount - 4) * 7,
+      60 - Math.max(0, normalizedCount - 4) * 7,
     ),
     preventativeRecommendation:
-      "High failure frequency detected. Immediate preventative overhaul or asset replacement review recommended.",
+      "High failure frequency detected. Prioritize root-cause inspection and evaluate preventative overhaul or asset replacement.",
     totalTicketCount: normalizedCount,
+  };
+}
+
+export type PredictiveAssetRiskInput = {
+  totalTickets: number;
+  openTickets: number;
+  criticalTickets: number;
+  highPriorityTickets: number;
+  resolvedTickets: number;
+  slaEligibleTickets: number;
+  slaBreaches: number;
+  recurringIssueCount: number;
+  recurringIssueRate: number;
+  averageResolutionHours: number | null;
+  maintenancePlanCount: number;
+  overdueMaintenancePlans: number;
+  criticality: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+};
+
+export type PredictiveAssetRiskInsight = {
+  healthScore: number;
+  failureRiskPercent: number;
+  riskLevel: "HEALTHY" | "MODERATE" | "HIGH_RISK";
+  predictedFailureWindowDays: number | null;
+  riskFactors: string[];
+  preventativeRecommendation: string;
+};
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(100, value));
+}
+
+/**
+ * Deterministic predictive-maintenance risk engine.
+ *
+ * The score combines persisted operational signals rather than relying
+ * solely on ticket volume. It is intentionally explainable and deterministic
+ * so administrators can understand why an asset is considered risky.
+ */
+export function calculatePredictiveAssetRisk(
+  input: PredictiveAssetRiskInput,
+): PredictiveAssetRiskInsight {
+  const totalTickets = Math.max(0, input.totalTickets);
+  const openTickets = Math.max(0, input.openTickets);
+  const criticalTickets = Math.max(0, input.criticalTickets);
+  const highPriorityTickets = Math.max(0, input.highPriorityTickets);
+  const resolvedTickets = Math.max(0, input.resolvedTickets);
+  const slaEligibleTickets = Math.max(0, input.slaEligibleTickets);
+  const slaBreaches = Math.max(0, input.slaBreaches);
+  const recurringIssueCount = Math.max(0, input.recurringIssueCount);
+  const recurringIssueRate = clampScore(input.recurringIssueRate);
+  const maintenancePlanCount = Math.max(0, input.maintenancePlanCount);
+  const overdueMaintenancePlans = Math.max(
+    0,
+    input.overdueMaintenancePlans,
+  );
+
+  const riskFactors: string[] = [];
+
+  let risk = 0;
+
+  // Historical incident frequency.
+  risk += Math.min(20, totalTickets * 3);
+
+  if (totalTickets >= 5) {
+    riskFactors.push("High historical ticket frequency");
+  } else if (totalTickets >= 3) {
+    riskFactors.push("Repeated maintenance activity");
+  }
+
+  // Current unresolved pressure.
+  risk += Math.min(15, openTickets * 5);
+
+  if (openTickets >= 2) {
+    riskFactors.push("Multiple unresolved tickets");
+  }
+
+  // Severity concentration.
+  risk += Math.min(15, criticalTickets * 10);
+  risk += Math.min(10, highPriorityTickets * 3);
+
+  if (criticalTickets > 0) {
+    riskFactors.push("Critical incidents recorded");
+  } else if (highPriorityTickets >= 2) {
+    riskFactors.push("Repeated high-priority incidents");
+  }
+
+  // Recurrence is a strong predictive signal.
+  risk += Math.min(15, recurringIssueCount * 4);
+  risk += recurringIssueRate * 0.1;
+
+  if (recurringIssueCount >= 2) {
+    riskFactors.push("Recurring issue pattern detected");
+  }
+
+  // SLA failures indicate operational instability.
+  const slaBreachRate =
+    slaEligibleTickets > 0
+      ? slaBreaches / slaEligibleTickets
+      : 0;
+
+  risk += Math.min(10, slaBreachRate * 20);
+
+  if (slaBreachRate >= 0.25) {
+    riskFactors.push("Elevated SLA breach rate");
+  }
+
+  // Slow resolution indicates increasing maintenance burden.
+  if (
+    input.averageResolutionHours !== null &&
+    input.averageResolutionHours > 48
+  ) {
+    risk += 8;
+    riskFactors.push("Long average resolution time");
+  } else if (
+    input.averageResolutionHours !== null &&
+    input.averageResolutionHours > 24
+  ) {
+    risk += 4;
+  }
+
+  // Maintenance coverage reduces risk; overdue plans increase it.
+  if (maintenancePlanCount === 0 && totalTickets > 0) {
+    risk += 8;
+    riskFactors.push("No preventive maintenance plan configured");
+  }
+
+  if (overdueMaintenancePlans > 0) {
+    risk += Math.min(12, overdueMaintenancePlans * 4);
+    riskFactors.push("Preventive maintenance is overdue");
+  }
+
+  // Asset criticality changes the operational consequence of failure.
+  const criticalityAdjustment: Record<
+    PredictiveAssetRiskInput["criticality"],
+    number
+  > = {
+    LOW: 0,
+    MEDIUM: 3,
+    HIGH: 7,
+    CRITICAL: 12,
+  };
+
+  risk += criticalityAdjustment[input.criticality];
+
+  if (input.criticality === "CRITICAL") {
+    riskFactors.push("Criticality amplifies operational failure impact");
+  } else if (input.criticality === "HIGH") {
+    riskFactors.push("High asset criticality");
+  }
+
+  // Successful resolution history provides a small stabilizing signal.
+  if (
+    resolvedTickets >= 3 &&
+    openTickets === 0 &&
+    slaBreachRate < 0.15 &&
+    recurringIssueRate < 50
+  ) {
+    risk -= 8;
+  }
+
+  const failureRiskPercent = Math.round(
+    clampScore(risk),
+  );
+
+  const healthScore = Math.round(
+    clampScore(100 - failureRiskPercent),
+  );
+
+  const riskLevel =
+    failureRiskPercent >= 60
+      ? "HIGH_RISK"
+      : failureRiskPercent >= 30
+        ? "MODERATE"
+        : "HEALTHY";
+
+  let predictedFailureWindowDays: number | null = null;
+
+  if (riskLevel === "HIGH_RISK") {
+    predictedFailureWindowDays = Math.max(
+      14,
+      Math.round(90 - failureRiskPercent),
+    );
+  } else if (riskLevel === "MODERATE") {
+    predictedFailureWindowDays = Math.max(
+      45,
+      Math.round(150 - failureRiskPercent),
+    );
+  }
+
+  let preventativeRecommendation =
+    "Continue scheduled preventive maintenance and monitor the asset.";
+
+  if (riskLevel === "MODERATE") {
+    preventativeRecommendation =
+      "Schedule a preventive inspection within 30 days and review recurring failure patterns.";
+  }
+
+  if (riskLevel === "HIGH_RISK") {
+    preventativeRecommendation =
+      "Prioritize root-cause inspection, overdue maintenance, and repair-versus-replacement review.";
+  }
+
+  if (riskFactors.length === 0) {
+    riskFactors.push("No significant predictive risk signals detected");
+  }
+
+  return {
+    healthScore,
+    failureRiskPercent,
+    riskLevel,
+    predictedFailureWindowDays,
+    riskFactors,
+    preventativeRecommendation,
   };
 }

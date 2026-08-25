@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AssetCriticality, AssetStatus } from "@prisma/client";
 
 import { requireRole } from "@/src/server/auth/guards";
-import { getAsset } from "@/src/server/services/assets";
+import { getAsset, getAssetPredictiveRisk } from "@/src/server/services/assets";
 import { getAssetHistoricalRepairInsight } from "@/src/server/services/historical-repair-intelligence";
 
 function formatEnum(value: string) {
@@ -35,17 +35,21 @@ export default async function AssetPage({ params }: AssetPageProps) {
   const session = await requireRole("ADMIN");
   const { assetId } = await params;
 
-  const [asset, historicalRepairInsight] = await Promise.all([
-    getAsset(
-      {
-        id: session.user.id,
-        role: session.user.role,
-      },
-      assetId,
-    ),
-    getAssetHistoricalRepairInsight(assetId),
-  ]);
+  const assetActor = {
+    id: session.user.id,
+    role: session.user.role,
+  };
 
+  const [asset, historicalRepairInsight] =
+    await Promise.all([
+      getAsset(assetActor, assetId),
+      getAssetHistoricalRepairInsight(assetId),
+    ]);
+
+  const predictiveRisk = await getAssetPredictiveRisk(
+    assetActor,
+    assetId,
+  );
   return (
     <main className="mx-auto w-full max-w-[1200px] px-6 py-8">
       <div className="flex flex-col justify-between gap-4 border-b border-[#303438] pb-6 sm:flex-row sm:items-end">
@@ -216,6 +220,101 @@ export default async function AssetPage({ params }: AssetPageProps) {
           </div>
         )}
       </section>
+      <section className="mt-6 overflow-hidden rounded-lg border border-[#303438] bg-[#181b1d]">
+        <div className="border-b border-[#2d3033] px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
+                Predictive Asset Risk
+              </p>
+              <p className="mt-1 text-xs text-[#686d68]">
+                Explainable failure-risk assessment from asset maintenance history.
+              </p>
+            </div>
+
+            <span
+              className={`rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] ${
+                predictiveRisk.riskLevel === "HIGH_RISK"
+                  ? "border-red-500/30 bg-red-500/[0.06] text-red-300"
+                  : predictiveRisk.riskLevel === "MODERATE"
+                    ? "border-amber-500/25 bg-amber-500/[0.05] text-amber-300"
+                    : "border-emerald-500/25 bg-emerald-500/[0.05] text-emerald-300"
+              }`}
+            >
+              {predictiveRisk.riskLevel.replace("_", " ")}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-md border border-[#303438] bg-[#202326] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
+              Health Score
+            </p>
+            <p className="mt-2 text-2xl font-bold text-[#edede9]">
+              {predictiveRisk.healthScore}
+              <span className="ml-1 text-xs font-medium text-[#686d68]">
+                /100
+              </span>
+            </p>
+          </div>
+
+          <div className="rounded-md border border-[#303438] bg-[#202326] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
+              Failure Risk
+            </p>
+            <p className="mt-2 text-2xl font-bold text-[#edede9]">
+              {predictiveRisk.failureRiskPercent}%
+            </p>
+          </div>
+
+          <div className="rounded-md border border-[#303438] bg-[#202326] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
+              Predicted Window
+            </p>
+            <p className="mt-2 text-2xl font-bold text-[#edede9]">
+              {predictiveRisk.predictedFailureWindowDays !== null
+                ? `~${predictiveRisk.predictedFailureWindowDays}d`
+                : "N/A"}
+            </p>
+          </div>
+
+          <div className="rounded-md border border-[#303438] bg-[#202326] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
+              Risk Signals
+            </p>
+            <p className="mt-2 text-2xl font-bold text-[#edede9]">
+              {predictiveRisk.riskFactors.length}
+            </p>
+          </div>
+        </div>
+
+        <div className="border-t border-[#2d3033] px-5 py-4">
+          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
+            Risk Factors
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {predictiveRisk.riskFactors.map((factor, index) => (
+              <span
+                key={`${factor}-${index}`}
+                className="rounded-md border border-[#303438] bg-[#202326] px-3 py-2 text-[10px] text-[#aeb2ad]"
+              >
+                {factor}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-[#2d3033] px-5 py-4">
+          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
+            Preventative Recommendation
+          </p>
+          <p className="mt-2 max-w-4xl text-xs leading-5 text-[#aeb2ad]">
+            {predictiveRisk.preventativeRecommendation}
+          </p>
+        </div>
+      </section>
+
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-[#303438] bg-[#181b1d]">
           <div className="border-b border-[#2d3033] px-5 py-4">
