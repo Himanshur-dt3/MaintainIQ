@@ -1,5 +1,6 @@
 ﻿import {
   AssetStatus,
+  AssetCriticality,
   Prisma,
   Role,
   TicketStatus,
@@ -193,6 +194,7 @@ async function resolveAssetForTriage(
       type: recommendation.asset_type,
       location: recommendation.asset_location,
       status: AssetStatus.ACTIVE,
+      criticality: AssetCriticality.MEDIUM,
     },
     select: { id: true },
   });

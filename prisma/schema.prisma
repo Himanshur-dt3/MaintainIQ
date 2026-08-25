@@ -42,6 +42,13 @@ enum AssetStatus {
   RETIRED
 }
 
+enum AssetCriticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 enum MaintenancePlanStatus {
   ACTIVE
   PAUSED
@@ -89,6 +96,7 @@ model Asset {
   type      String
   location  String
   status            AssetStatus        @default(ACTIVE)
+  criticality       AssetCriticality  @default(MEDIUM)
   tickets           Ticket[]
   maintenancePlans  MaintenancePlan[]
   createdAt         DateTime           @default(now())

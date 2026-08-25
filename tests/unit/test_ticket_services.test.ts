@@ -1,4 +1,4 @@
-﻿import { AssetStatus, IssueType, Priority, Role, TicketStatus } from "@prisma/client";
+﻿import { AssetCriticality, AssetStatus, IssueType, Priority, Role, TicketStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prismaMock = vi.hoisted(() => ({
@@ -217,6 +217,7 @@ describe("ticket persistence and workflow services", () => {
         type: validRecommendation.asset_type,
         location: validRecommendation.asset_location,
         status: AssetStatus.ACTIVE,
+        criticality: AssetCriticality.MEDIUM,
       },
       select: { id: true },
     });
