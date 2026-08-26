@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 import prisma from "@/src/server/db/prisma";
 import { requireUser } from "@/src/server/auth/guards";
@@ -65,13 +65,13 @@ export default async function NewMaintenancePlanPage({
       <div className="mb-6">
         <Link
           href="/admin/maintenance-plans"
-          className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#777c77] transition hover:text-[#d0d2cd]"
+          className="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-400 transition hover:text-sky-300"
         >
           ← Maintenance Plans
         </Link>
 
-        <div className="mt-4 border-b border-[#303438] pb-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">
+        <div className="mt-4 border-b border-sky-500/20 border-l-2 border-l-sky-400/60 pb-6 pl-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-400">
             Maintenance Operations
           </p>
 

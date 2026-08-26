@@ -92,7 +92,7 @@ export default async function MaintenancePlansPage() {
 
         <Link
           href="/admin/maintenance-plans/new"
-          className="inline-flex items-center justify-center rounded-md border border-[#555a5d] bg-[#e8e8e3] px-4 py-2.5 text-xs font-bold text-[#17191b] transition hover:bg-white"
+          className="inline-flex items-center justify-center rounded-md border border-sky-400/40 bg-sky-500 px-4 py-2.5 text-xs font-bold text-[#07131d] shadow-[0_0_18px_rgba(14,165,233,0.12)] transition hover:bg-sky-400"
         >
           Create Maintenance Plan
         </Link>
@@ -108,7 +108,7 @@ export default async function MaintenancePlansPage() {
         ].map(([label, value]) => (
           <div
             key={label}
-            className="rounded-lg border border-[#303438] bg-[#181b1d] p-4"
+            className="rounded-lg border border-sky-500/20 border-t-2 border-t-sky-400/60 bg-[#181b1d] p-4 transition-colors hover:border-sky-500/35"
           >
             <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#686d68]">
               {label}
@@ -121,7 +121,7 @@ export default async function MaintenancePlansPage() {
         ))}
       </section>
 
-      <section className="mt-6 overflow-hidden rounded-lg border border-[#303438] bg-[#181b1d]">
+      <section className="mt-6 overflow-hidden rounded-lg border border-sky-500/20 bg-[#181b1d] shadow-[0_0_0_1px_rgba(14,165,233,0.03)]">
         <div className="flex flex-col justify-between gap-2 border-b border-[#2d3033] px-5 py-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#737873]">

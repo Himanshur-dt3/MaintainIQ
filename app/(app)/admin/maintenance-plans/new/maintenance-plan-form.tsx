@@ -131,10 +131,10 @@ export default function MaintenancePlanForm({
   }
 
   const inputClass =
-    "mt-1 w-full rounded-md border border-[#35393c] bg-[#141718] px-3 py-2.5 text-sm text-[#e5e6e1] outline-none transition placeholder:text-[#555a56] focus:border-[#666c68]";
+    "mt-1 w-full rounded-md border border-[#35393c] bg-[#141718] px-3 py-2.5 text-sm text-[#e5e6e1] outline-none transition placeholder:text-[#555a56] focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/20";
 
   const labelClass =
-    "text-[10px] font-bold uppercase tracking-[0.14em] text-[#777c77]";
+    "text-[10px] font-bold uppercase tracking-[0.14em] text-sky-300/80";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -147,8 +147,8 @@ export default function MaintenancePlanForm({
         </div>
       ) : null}
 
-      <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
-        <div className="border-b border-[#2d3033] pb-4">
+      <section className="rounded-lg border border-sky-500/20 bg-[#181b1d] p-5 shadow-[0_0_0_1px_rgba(14,165,233,0.025)]">
+        <div className="border-b border-sky-500/15 border-l-2 border-l-sky-400/50 pb-4 pl-3">
           <p className={labelClass}>Plan Details</p>
           <h2 className="mt-1 text-base font-bold text-[#ededE9]">
             Maintenance definition
@@ -216,8 +216,8 @@ export default function MaintenancePlanForm({
         </div>
       </section>
 
-      <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
-        <div className="border-b border-[#2d3033] pb-4">
+      <section className="rounded-lg border border-sky-500/20 bg-[#181b1d] p-5 shadow-[0_0_0_1px_rgba(14,165,233,0.025)]">
+        <div className="border-b border-sky-500/15 border-l-2 border-l-sky-400/50 pb-4 pl-3">
           <p className={labelClass}>Schedule</p>
           <h2 className="mt-1 text-base font-bold text-[#ededE9]">
             Maintenance cadence
@@ -287,8 +287,8 @@ export default function MaintenancePlanForm({
         </div>
       </section>
 
-      <section className="rounded-lg border border-[#303438] bg-[#181b1d] p-5">
-        <div className="border-b border-[#2d3033] pb-4">
+      <section className="rounded-lg border border-sky-500/20 bg-[#181b1d] p-5 shadow-[0_0_0_1px_rgba(14,165,233,0.025)]">
+        <div className="border-b border-sky-500/15 border-l-2 border-l-sky-400/50 pb-4 pl-3">
           <p className={labelClass}>Additional Information</p>
           <h2 className="mt-1 text-base font-bold text-[#ededE9]">
             Operational notes
@@ -320,7 +320,7 @@ export default function MaintenancePlanForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-[#e8e8e3] px-5 py-2.5 text-sm font-bold text-[#17191b] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md border border-sky-400/40 bg-sky-500 px-5 py-2.5 text-sm font-bold text-[#07131d] shadow-[0_0_18px_rgba(14,165,233,0.12)] transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Creating..." : "Create Maintenance Plan"}
         </button>
