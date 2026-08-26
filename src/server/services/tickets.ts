@@ -139,6 +139,70 @@ async function resolveAssetForTriage(
   intake: TicketIntakeInput,
   recommendation: AiTriageRecommendation,
 ): Promise<{ id: string; created: boolean }> {
+  if (intake.assetId) {
+    const existingAsset = await tx.asset.findFirst({
+      where: {
+        id: intake.assetId,
+        status: AssetStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingAsset) {
+      throw new WorkflowError(
+        "The selected asset is no longer active. Please select another asset.",
+      );
+    }
+
+    return {
+      id: existingAsset.id,
+      created: false,
+    };
+  }
+
+  if (intake.newAsset) {
+    const existingAsset = await tx.asset.findUnique({
+      where: {
+        name: intake.newAsset.name,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingAsset) {
+      return {
+        id: existingAsset.id,
+        created: false,
+      };
+    }
+
+    const createdAsset = await tx.asset.create({
+      data: {
+        name: intake.newAsset.name,
+        type: intake.newAsset.type,
+        location: intake.newAsset.location,
+        status: AssetStatus.ACTIVE,
+        criticality: AssetCriticality.MEDIUM,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return {
+      id: createdAsset.id,
+      created: true,
+    };
+  }
+
+  /*
+   * Defensive fallback. Validation requires either assetId or newAsset,
+   * but retain the existing AI resolution path for callers that reach this
+   * service without the reporter intake contract.
+   */
   if (!recommendation.create_asset && recommendation.asset_id) {
     const existingAsset = await tx.asset.findFirst({
       where: {
@@ -159,7 +223,10 @@ async function resolveAssetForTriage(
         existingAsset.location,
       )
     ) {
-      return { id: existingAsset.id, created: false };
+      return {
+        id: existingAsset.id,
+        created: false,
+      };
     }
   }
 
@@ -172,20 +239,32 @@ async function resolveAssetForTriage(
         mode: "insensitive",
       },
     },
-    select: { id: true },
+    select: {
+      id: true,
+    },
   });
 
   if (matchingGeneratedAsset) {
-    return { id: matchingGeneratedAsset.id, created: false };
+    return {
+      id: matchingGeneratedAsset.id,
+      created: false,
+    };
   }
 
   const duplicateName = await tx.asset.findUnique({
-    where: { name: recommendation.asset_name },
-    select: { id: true },
+    where: {
+      name: recommendation.asset_name,
+    },
+    select: {
+      id: true,
+    },
   });
 
   if (duplicateName) {
-    return { id: duplicateName.id, created: false };
+    return {
+      id: duplicateName.id,
+      created: false,
+    };
   }
 
   const createdAsset = await tx.asset.create({
@@ -196,12 +275,16 @@ async function resolveAssetForTriage(
       status: AssetStatus.ACTIVE,
       criticality: AssetCriticality.MEDIUM,
     },
-    select: { id: true },
+    select: {
+      id: true,
+    },
   });
 
-  return { id: createdAsset.id, created: true };
+  return {
+    id: createdAsset.id,
+    created: true,
+  };
 }
-
 /**
  * Runs AI triage, resolves a context-relevant asset, and atomically persists
  * the reporter ticket, persisted AI analysis, and audit history.

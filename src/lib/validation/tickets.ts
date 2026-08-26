@@ -21,13 +21,43 @@ export const issueTypeSchema = z.nativeEnum(IssueType);
  * The reporter-provided facts used to generate an AI recommendation.
  * Classification, priority, and asset selection remain server-derived.
  */
+const reporterNewAssetSchema = z
+  .object({
+    name: trimmedText("Asset name", 2, 160),
+    type: trimmedText("Asset type", 2, 120),
+    location: trimmedText("Asset location", 2, 160),
+  })
+  .strict();
+
 export const ticketIntakeSchema = z
   .object({
     title: trimmedText("Title", 3, 160),
     description: trimmedText("Description", 10, 5000),
     location: trimmedText("Location", 2, 160),
+    assetId: z.string().uuid("Asset ID must be a valid UUID.").nullable().optional(),
+    newAsset: reporterNewAssetSchema.nullable().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    const hasExistingAsset = Boolean(value.assetId);
+    const hasNewAsset = Boolean(value.newAsset);
+
+    if (!hasExistingAsset && !hasNewAsset) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["assetId"],
+        message: "Select an asset or add a new asset.",
+      });
+    }
+
+    if (hasExistingAsset && hasNewAsset) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["assetId"],
+        message: "Select an existing asset or add a new asset, not both.",
+      });
+    }
+  });
 
 const aiAssetRecommendationFields = {
   asset_id: z.string().uuid("AI asset ID must be a valid UUID.").nullable(),
